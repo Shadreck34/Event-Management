@@ -284,50 +284,41 @@ def generate_recurring_events(base_event_data, recurrence_type, recurrence_end_d
     base_date = datetime.strptime(base_event_data['event_date'], '%Y-%m-%d')
     end_date = datetime.strptime(recurrence_end_date, '%Y-%m-%d')
     current_date = base_date
-    
-    # Generate recurring instances
+
     while True:
-        if recurrence_type == 'weekly':
+        if recurrence_type == 'daily':
+            current_date += timedelta(days=1)
+        elif recurrence_type == 'weekly':
             current_date += timedelta(weeks=1)
         elif recurrence_type == 'biweekly':
             current_date += timedelta(weeks=2)
         elif recurrence_type == 'monthly':
-            # Handle month-end dates properly
             if current_date.month == 12:
                 next_month = current_date.replace(year=current_date.year + 1, month=1)
             else:
                 next_month = current_date.replace(month=current_date.month + 1)
-            
-            # Handle cases where the day doesn't exist in the next month (e.g., Jan 31 -> Feb 28)
             try:
                 current_date = next_month.replace(day=base_date.day)
             except ValueError:
-                # Day doesn't exist in this month, use last day of month
                 last_day = calendar.monthrange(next_month.year, next_month.month)[1]
                 current_date = next_month.replace(day=min(base_date.day, last_day))
-                
         elif recurrence_type == 'yearly':
             try:
                 current_date = current_date.replace(year=current_date.year + 1)
             except ValueError:
-                # Handle leap year edge case (Feb 29)
                 current_date = current_date.replace(year=current_date.year + 1, month=2, day=28)
         else:
             break  # Unknown recurrence type
-        
-        # Stop if we've exceeded the end date
+
         if current_date > end_date:
             break
-        
-        # Create event data for this instance
+
         event_instance = base_event_data.copy()
         event_instance['event_date'] = current_date.strftime('%Y-%m-%d')
-        event_instance['recurrence_type'] = 'none'  # Individual instances are not recurring
+        event_instance['recurrence_type'] = 'none'
         event_instance['recurrence_end_date'] = None
-        event_instance['parent_event_id'] = base_event_data.get('id')  # Link to original event
-        
+        event_instance['parent_event_id'] = base_event_data.get('id')
         recurring_events.append(event_instance)
-    
     return recurring_events
 
 
@@ -552,9 +543,15 @@ def create_event_updated(current_user):
             if not recurrence_end_date:
                 return jsonify({"error": "Recurrence end date is required for recurring events"}), 400
             
-            valid_recurrence_types = ['weekly', 'biweekly', 'monthly', 'yearly']
+            valid_recurrence_types = ['weekly', 'biweekly', 'monthly', 'yearly', 'daily']
             if recurrence_type not in valid_recurrence_types:
                 return jsonify({"error": f"Invalid recurrence type. Must be one of: {valid_recurrence_types}"}), 400
+            
+            # Validate end date is after start date
+            start_date = datetime.strptime(data['event_date'], '%Y-%m-%d')
+            end_date = datetime.strptime(recurrence_end_date, '%Y-%m-%d')
+            if end_date <= start_date:
+                return jsonify({"error": "Recurrence end date must be after the event date"}), 400
         
         # Check for conflicts including recurring instances
         conflicts = has_conflict_with_recurrence(
@@ -971,7 +968,7 @@ def create_event(current_user):
             if not recurrence_end_date:
                 return jsonify({"error": "Recurrence end date is required for recurring events"}), 400
             
-            valid_recurrence_types = ['weekly', 'biweekly', 'monthly', 'yearly']
+            valid_recurrence_types = ['weekly', 'biweekly', 'monthly', 'yearly', 'daily']
             if recurrence_type not in valid_recurrence_types:
                 return jsonify({"error": f"Invalid recurrence type. Must be one of: {valid_recurrence_types}"}), 400
                 
@@ -1159,6 +1156,7 @@ def get_recurrence_types():
     """Get available recurrence types"""
     return jsonify([
         {"value": "none", "label": "No Recurrence"},
+        {"value": "daily", "label": "Daily"},
         {"value": "weekly", "label": "Weekly"},
         {"value": "biweekly", "label": "Bi-weekly"},
         {"value": "monthly", "label": "Monthly"}, 
@@ -1683,94 +1681,103 @@ def delete_event(current_user, event_id):
 @token_required('planner')
 def save_bulletins(current_user, event_id):
     try:
-        data = request.json # Get old bulletins
-        cur = mysql.connection.cursor()
-        cur.execute("SELECT * FROM bulletins WHERE event_id = %s", (event_id,))
-        old_bulletins = cur.fetchall()
-        cur.close()
-        
-         # List of bulletin items
+        data = request.json
+        if not isinstance(data, list):
+            return jsonify({"error": "Request body must be a list of bulletins"}), 400
+
         cur = mysql.connection.cursor()
 
-        # Get event details
-        cur.execute("SELECT event_date, start_time FROM events WHERE id = %s", (event_id,))
-        result = cur.fetchone()
-        if not result:
+        # Get event info to check if it's a recurring parent
+        cur.execute("""
+            SELECT id, recurrence_type, parent_event_id 
+            FROM events 
+            WHERE id = %s
+        """, (event_id,))
+        event = cur.fetchone()
+        if not event:
+            cur.close()
             return jsonify({"error": "Event not found"}), 404
 
-        event_date = result[0] if isinstance(result, dict) else result[0]
-        event_start_time = result[1] if isinstance(result, dict) else result[1]
-        event_start_time = datetime.strptime(str(event_start_time), "%H:%M:%S")
-        current_time = event_start_time
+        event_id, recurrence_type, parent_event_id = event
 
-        # Sort bulletins by display order
-        sorted_bulletins = sorted(data, key=lambda x: int(x.get('display_order', 0)))
-        last_end_time = current_time
-        for item in sorted_bulletins:
-            duration = int(item['duration_minutes'])
-            last_end_time = current_time + timedelta(minutes=duration)
-            current_time = last_end_time
+        # Determine if this is the parent event of a series
+        is_parent_event = (parent_event_id is None) and (recurrence_type != 'none')
+        series_parent_id = event_id if is_parent_event else parent_event_id
 
-        new_end_time = last_end_time.strftime("%H:%M:%S")
-
-        # Conflict detection: check if new end time overlaps with other events
-        conflicts = has_conflict(event_date, event_start_time.strftime("%H:%M:%S"), new_end_time, 'none', None, exclude_event_id=event_id)
-        if conflicts:
-            return jsonify({
-                "error": "Event time conflicts with another event.",
-                "conflicts": [
-                    {"id": c[0], "title": c[1]}
-                    for c in conflicts
-                ]
-            }), 409
-
-        # Proceed to save bulletins and update event end_time if no conflict
-        cur.execute("DELETE FROM bulletins WHERE event_id = %s", (event_id,))
-        current_time = event_start_time
-        for item in sorted_bulletins:
-            duration = int(item['duration_minutes'])
+        # Find all events in the series (parent + instances)
+        if series_parent_id:
             cur.execute("""
-                INSERT INTO bulletins (event_id, start_time, title, duration_minutes, preacher, language, category, display_order)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (
-                event_id,
-                current_time.strftime("%H:%M:%S"),
-                item['title'],
-                duration,
-                item.get('preacher', ''),
-                item.get('language', 'EN'),
-                item.get('category', ''),
-                item.get('display_order', 0)
-            ))
-            # Update time for next item
-            last_end_time = current_time + timedelta(minutes=duration)
-            current_time = last_end_time
+                SELECT id, event_date, start_time FROM events 
+                WHERE id = %s OR parent_event_id = %s
+                ORDER BY event_date ASC
+            """, (series_parent_id, series_parent_id))
+            series_events = cur.fetchall()
+        else:
+            cur.execute("""
+                SELECT id, event_date, start_time FROM events 
+                WHERE id = %s
+            """, (event_id,))
+            series_events = cur.fetchall()
 
-        # Update the event's end_time to the last_end_time
-        cur.execute(
-            "UPDATE events SET end_time = %s WHERE id = %s",
-            (last_end_time.strftime("%H:%M:%S"), event_id)
-        )
+        series_event_ids = [row[0] for row in series_events]
+        event_start_times = {row[0]: row[2] for row in series_events}
+
+        # Delete old bulletins for all events in the series
+        if series_event_ids:
+            placeholders = ','.join(['%s'] * len(series_event_ids))
+            cur.execute(f"DELETE FROM bulletins WHERE event_id IN ({placeholders})", tuple(series_event_ids))
+
+        # Sort bulletins by display_order
+        sorted_bulletins = sorted(data, key=lambda x: int(x.get('display_order', 0)))
+
+        # Insert bulletins for each event in the series
+        for eid in series_event_ids:
+            current_time = datetime.strptime(str(event_start_times[eid]), "%H:%M:%S")
+            last_end_time = current_time
+            for item in sorted_bulletins:
+                duration = int(item['duration_minutes'])
+                cur.execute("""
+                    INSERT INTO bulletins 
+                    (event_id, start_time, title, duration_minutes, preacher, language, category, display_order)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    eid,
+                    current_time.strftime("%H:%M:%S"),
+                    item['title'],
+                    duration,
+                    item.get('preacher', ''),
+                    item.get('language', 'EN'),
+                    item.get('category', ''),
+                    item.get('display_order', 0)
+                ))
+                last_end_time = current_time + timedelta(minutes=duration)
+                current_time = last_end_time
+            # Update event end_time based on last bulletin
+            cur.execute("UPDATE events SET end_time = %s WHERE id = %s", 
+                        (last_end_time.strftime("%H:%M:%S"), eid))
 
         mysql.connection.commit()
         cur.close()
 
-        
         # Log the action
         AuditLog.log_action(
             user_id=current_user['id'],
-            action_type='EDIT',
-            entity_type='BULLETIN',
+            action_type='BULK_EDIT' if series_parent_id else 'EDIT',
+            entity_type='BULLETIN_SERIES' if series_parent_id else 'BULLETIN',
             entity_id=event_id,
-            old_data=old_bulletins,
-            new_data=data
+            new_data={"bulletins_count": len(data), "synced_to_series": bool(series_parent_id)},
+            ip_address=request.remote_addr
         )
-        return jsonify({"message": "Bulletins saved successfully"})
-    except Exception as e:
-        return handle_error(e)
 
+        return jsonify({"message": f"Bulletins saved and synced to {len(series_event_ids)} event(s)."}), 200
+
+    except Exception as e:
+        mysql.connection.rollback()
+        return handle_error(e)
+        
 @app.route('/events/<int:event_id>/bulletins', methods=['GET'])
-def get_bulletins(event_id):
+@token_required('viewer')  # Allow viewers to read bulletins
+def get_bulletins(current_user, event_id):
     try:
         cur = mysql.connection.cursor()
         cur.execute("""
@@ -1781,35 +1788,27 @@ def get_bulletins(event_id):
         """, (event_id,))
         bulletins = cur.fetchall()
         cur.close()
-        
-        if bulletins and isinstance(bulletins[0], dict):
-            result = []
-            for bulletin in bulletins:
-                result.append({
-                    "title": bulletin['title'],
-                    "start_time": str(bulletin['start_time']),
-                    "duration_minutes": bulletin['duration_minutes'],
-                    "preacher": bulletin['preacher'],
-                    "language": bulletin['language'],
-                    "category": bulletin['category'],
-                    "display_order": bulletin['display_order']
-                })
-            return jsonify(result)
-        else:
-            return jsonify([
-                {
-                    "title": row[0],
-                    "start_time": str(row[1]),
-                    "duration_minutes": row[2],
-                    "preacher": row[3],
-                    "language": row[4],
-                    "category": row[5],
-                    "display_order": row[6]
-                } for row in bulletins
-            ])
+
+        return jsonify([
+            {
+                "title": b[0],
+                "start_time": str(b[1]),
+                "duration_minutes": b[2],
+                "preacher": b[3],
+                "language": b[4],
+                "category": b[5],
+                "display_order": b[6]
+            } for b in bulletins
+        ])
     except Exception as e:
         return handle_error(e)
-    
+
+# Optionally, you can make bulk_add_bulletins_to_series reuse this logic:
+@app.route('/events/<int:parent_event_id>/bulk-add-bulletins', methods=['POST'])
+@token_required('planner')
+def bulk_add_bulletins_to_series(current_user, parent_event_id):
+    # Just reuse the main endpoint behavior
+    return save_bulletins(current_user, parent_event_id)
 # -----------------------------
 # REAL-TIME ACTIVITY CONTROL ENDPOINT
 # -----------------------------
@@ -2057,18 +2056,19 @@ def recalculate_event_schedule(cursor, event_id):
         if next_event:
             next_event_id, next_start_str, next_end_str = next_event
             next_start = datetime.strptime(str(next_start_str), "%H:%M:%S")
+            next_start_dt = datetime.combine(datetime.today(), next_start)
+            new_end_time_obj = datetime.strptime(new_end_time, "%H:%M:%S")
+            new_end_dt = datetime.combine(datetime.today(), new_end_time_obj)
 
             # Define buffer (e.g., 5 minutes between events)
             buffer = timedelta(minutes=5)
             scheduled_end = datetime.combine(datetime.today(), current_time.time())
             earliest_next_start = scheduled_end + buffer
 
-            next_start_datetime = datetime.combine(datetime.today(), next_start)
-
             # Check if next event starts too soon
-            if next_start_datetime < earliest_next_start:
+            if next_start_dt < earliest_next_start:
                 # Calculate delay in minutes
-                delay_seconds = (earliest_next_start - next_start_datetime).total_seconds()
+                delay_seconds = (earliest_next_start - next_start_dt).total_seconds()
                 delay_minutes = int(delay_seconds // 60) + (1 if delay_seconds % 60 > 0 else 0)
 
                 # Adjust the next event and all events after it
@@ -2728,8 +2728,6 @@ def get_audit_logs(current_user):
     except Exception as e:
         return handle_error(e)
     
-    # Add these endpoints to your existing app.py file
-
 # -----------------------------
 # ATTENDANCE TRACKING ENDPOINTS
 # -----------------------------
@@ -3007,10 +3005,6 @@ def get_upcoming_events_for_attendance(current_user):
     except Exception as e:
         return handle_error(e)
 
-# -----------------------------
-# EXPORT ENDPOINTS
-# -----------------------------
-
 @app.route('/reports/overtime-activities', methods=['GET'])
 @token_required('viewer')
 def get_overtime_activities(current_user):
@@ -3094,7 +3088,7 @@ ORDER BY a.timestamp DESC
             action_type='EXPORT',
             entity_type='EVENT',
             entity_id=-1,  # No specific entity
-            new_data={"export_type": "events", "range": date_range, "type": event_type}
+            ip_address=request.remote_addr
         )
         
         return jsonify(events)
@@ -3231,4 +3225,3 @@ if __name__ == "__main__":
 
 
 
-    
