@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Worship Scheduler</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+ <link rel="stylesheet" href="stylenew.css">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+
+
+    .container {
+      max-width: 480px;
+      margin: 40px auto;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+      padding: 40px 32px;
+      text-align: center;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    #fullscreenBtn {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 1000;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    #fullscreenBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
+    }
+
+    #activity {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 32px;
+      color: #2c3e50;
+      letter-spacing: -0.5px;
+      line-height: 1.3;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    #clock {
+      display: block;
+      margin: 0 auto 32px auto;
+      background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+      border-radius: 50%;
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      transition: all 0.4s ease;
+      border: 8px solid rgba(255, 255, 255, 0.8);
+    }
+
+    #digitalClock {
+      font-size: 32px;
+      font-weight: 800;
+      color: #2c3e50;
+      margin-bottom: 16px;
+      letter-spacing: 4px;
+      font-family: 'Courier New', monospace;
+      background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+      border-radius: 16px;
+      padding: 16px 24px;
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+
+    #countdown {
+      font-size: 18px;
+      font-weight: 600;
+      color: #475569;
+      background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+      border-radius: 12px;
+      padding: 16px 24px;
+      box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+
+    .status-offline {
+      background: linear-gradient(135deg, #fef2f2, #fee2e2) !important;
+      color: #dc2626 !important;
+      border-color: rgba(220, 38, 38, 0.2) !important;
+    }
+
+    /* Fullscreen styles */
+    body.fullscreen-mode {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+      overflow: hidden;
+    }
+
+    .container.fullscreen-mode {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      max-width: 100vw;
+      max-height: 100vh;
+      margin: 0;
+      padding: 40px;
+      border-radius: 0;
+      background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+      backdrop-filter: none;
+      box-shadow: none;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+/* Hide sidebar and main layout completely in fullscreen */
+.fullscreen-mode .sidebar {
+  display: none !important;
+}
+
+.fullscreen-mode .main-content {
+  margin-left: 0 !important;
+  padding: 0 !important;
+}
+
+.fullscreen-mode .header {
+  display: none !important;
+}
+
+.fullscreen-mode .menu-toggle {
+  display: none !important;
+}
+    .fullscreen-mode #activity {
+      font-size: clamp(36px, 5vw, 64px);
+      margin-bottom: 40px;
+      color: white;
+      background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+    }
+
+    .fullscreen-mode #clock {
+      width: min(60vw, 60vh);
+      height: min(55vw, 55vh);
+      margin-bottom: 40px;
+      background: radial-gradient(circle at 30% 30%, #f8fafc, #cbd5e1);
+      border: 12px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 
+        0 0 60px rgba(255, 255, 255, 0.2),
+        inset 0 2px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .fullscreen-mode #digitalClock {
+      font-size: clamp(10px, 3vw, 75px);
+      padding: 24px 40px;
+      margin-bottom: 24px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      letter-spacing: 5px;
+      min-width: 300px;
+    }
+
+    .fullscreen-mode #countdown {
+      font-size: clamp(18px, 3vw, 30px);
+      padding: 20px 32px;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      min-width: 300px;
+    }
+
+    .fullscreen-mode .status-offline {
+      background: rgba(239, 68, 68, 0.9) !important;
+      color: white !important;
+      border-color: rgba(255, 255, 255, 0.3) !important;
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      .container {
+        margin: 20px;
+        padding: 24px 20px;
+        max-width: calc(100vw - 40px);
+      }
+
+      #fullscreenBtn {
+        top: 16px;
+        right: 16px;
+        padding: 10px 16px;
+        font-size: 12px;
+      }
+
+      #activity {
+        font-size: 20px;
+        margin-bottom: 24px;
+      }
+
+      #clock {
+        width: 240px;
+        height: 240px;
+        border-width: 6px;
+      }
+
+      #digitalClock {
+        font-size: 24px;
+        padding: 12px 16px;
+        letter-spacing: 2px;
+      }
+
+      #countdown {
+        font-size: 16px;
+        padding: 12px 16px;
+      }
+
+      .fullscreen-mode .container {
+        padding: 20px;
+      }
+
+      .fullscreen-mode #clock {
+        width: min(80vw, 80vh);
+        height: min(80vw, 80vh);
+        border-width: 8px;
+      }
+
+      .fullscreen-mode #digitalClock {
+        min-width: 280px;
+        letter-spacing: 3px;
+      }
+
+      .fullscreen-mode #countdown {
+        min-width: 240px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .fullscreen-mode #digitalClock {
+        min-width: 240px;
+        font-size: clamp(20px, 8vw, 32px);
+      }
+
+      .fullscreen-mode #countdown {
+        min-width: 200px;
+        font-size: clamp(16px, 4vw, 24px);
+      }
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .container > * {
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    .container > *:nth-child(2) { animation-delay: 0.1s; }
+    .container > *:nth-child(3) { animation-delay: 0.2s; }
+    .container > *:nth-child(4) { animation-delay: 0.3s; }
+    .container > *:nth-child(5) { animation-delay: 0.4s; }
+
+    /* Clock pulse animation */
+    #clock {
+      animation: clockPulse 4s ease-in-out infinite;
+    }
+
+    @keyframes clockPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+
+    .fullscreen-mode #clock {
+      animation: clockPulseFullscreen 6s ease-in-out infinite;
+    }
+
+    @keyframes clockPulseFullscreen {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.01); }
+    }
+
+   .fullscreen-mode .sidebar-header {
+  display: none;
+}
+  </style>
+  <script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Check authentication
+    if (!AuthService.isAuthenticated()) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    // Display current user info
+    const user = AuthService.getCurrentUser();
+    if (user) {
+        document.getElementById('userAvatar').textContent = 
+            user.name ? user.name.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase();
+    }
+
+    // Logout button
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        AuthService.logout();
+    });
+
+    // Initialize the clock and activity updates
+    drawClock();
+    updateActivity();
+    setInterval(updateActivity, 5000);
+});
+</script>
+<body>
+  <div class="dashboard">
+        <!-- Mobile Menu Toggle -->
+        <button class="menu-toggle" id="menuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+
+<!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-clock"></i> Smart Clock</h2>
+            </div>
+            <div class="nav-menu">
+                <div class="nav-item">
+                    <a href="index.html" class="nav-link active">
+                        <i class="fas fa-home"></i> Live Dashboard
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="start_planning.html" class="nav-link">
+                        <i class="fas fa-calendar-plus"></i> Schedule Event
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="view_plans.html" class="nav-link">
+                        <i class="fas fa-calendar-alt"></i> View Events
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="reports.html" class="nav-link">
+                        <i class="fas fa-chart-bar"></i> Analytics & Reports
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="admin.html" class="nav-link">
+                        <i class="fas fa-users-cog"></i> User Management
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <div class="header">
+        <h1><i class="fas fa-clock"></i>  Current Activity </h1>
+        <div class="user-info">
+          <div class="user-avatar" id="userAvatar">AD</div>
+          <button class="logout-btn" id="logoutBtn">
+            <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+          </button>
+        </div>
+      </div>
+
+    <button id="fullscreenBtn" class="always-allowed" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+    <div class="container" id="mainContainer">
+  <h1 id="activity">Activity: --</h1>
+  
+  <!-- Overtime Warning Indicator -->
+  <div id="overtime-indicator" style="display: none; background-color: red; color: white; font-weight: bold; padding: 10px; margin: 10px 0; border-radius: 8px;">
+    OVERTIME
+  </div>
+  
+  <canvas id="clock" width="300" height="300"></canvas>
+  <div id="digitalClock">--:--:--</div>
+  <div id="countdown">Countdown: --</div>
+</div>
+  </div>
+    <!-- Add Font Awesome for icons -->
+    <script src="auth.js"></script>
+    
+
+    <script>
+    let isFullscreen = false;
+
+    function toggleFullscreen() {
+      const body = document.body;
+      const container = document.getElementById('mainContainer');
+      const canvas = document.getElementById('clock');
+      const btn = document.getElementById('fullscreenBtn');
+      const nav = document.querySelector('.nav-container');
+      const sidebarHeader = document.querySelector('.sidebar-header');
+  
+    if (!isFullscreen) {
+      // Enter fullscreen
+      isFullscreen = true;
+      body.classList.add('fullscreen-mode');
+      container.classList.add('fullscreen-mode');
+      btn.textContent = '✕ Exit Fullscreen';
+    
+      // Hide navigation and sidebar header
+      if (nav) nav.style.display = 'none';
+      if (sidebarHeader) sidebarHeader.style.display = 'none';
+    
+      // Resize canvas for fullscreen
+      const size = Math.min(window.innerWidth * 0.6, window.innerHeight * 0.6);
+      canvas.width = size;
+      canvas.height = size;
+    
+      // Try to enter browser fullscreen
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(err => {
+          console.log('Could not enter fullscreen mode:', err);
+        });
+      }
+    } else {
+      // Exit fullscreen
+      exitFullscreenMode();
+    }
+  
+    // Force clock redraw with new size
+    setTimeout(() => {
+      drawClockFace(canvas.getContext('2d'), canvas, canvas.width / 2);
+    }, 100);
+  }
+
+function exitFullscreenMode() {
+  const body = document.body;
+  const container = document.getElementById('mainContainer');
+  const canvas = document.getElementById('clock');
+  const btn = document.getElementById('fullscreenBtn');
+  const nav = document.querySelector('.nav-container');
+  const sidebarHeader = document.querySelector('.sidebar-header');
+  
+  isFullscreen = false;
+  body.classList.remove('fullscreen-mode');
+  container.classList.remove('fullscreen-mode');
+  btn.textContent = '⛶ Fullscreen';
+  
+  // Show navigation and sidebar header
+  if (nav) nav.style.display = 'flex';
+  if (sidebarHeader) sidebarHeader.style.display = 'block';
+  
+  // Resize canvas back to normal
+  canvas.width = 300;
+  canvas.height = 300;
+  
+  // Exit browser fullscreen
+  if (document.exitFullscreen) {
+    document.exitFullscreen().catch(err => {
+      console.log('Could not exit fullscreen mode:', err);
+    });
+  }
+  
+  // Force clock redraw
+  setTimeout(() => {
+    drawClockFace(canvas.getContext('2d'), canvas, 150);
+  }, 100);
+}
+    // Handle browser fullscreen changes
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement && isFullscreen) {
+        exitFullscreenMode();
+      }
+    });
+
+    // Handle escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        exitFullscreenMode();
+      }
+    });
+
+    // Handle window resize in fullscreen
+    window.addEventListener('resize', () => {
+      if (isFullscreen) {
+        const canvas = document.getElementById('clock');
+        const size = Math.min(window.innerWidth * 0.6, window.innerHeight * 0.6);
+        canvas.width = size;
+        canvas.height = size;
+        setTimeout(() => {
+          drawClockFace(canvas.getContext('2d'), canvas, canvas.width / 2);
+        }, 10);
+      }
+    });
+
+    function updateDigitalClock() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('en-US', { 
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      document.getElementById('digitalClock').textContent = timeString;
+    }
+
+    function drawClock() {
+      const canvas = document.getElementById("clock");
+      const ctx = canvas.getContext("2d");
+      
+      // Initial draw
+      drawClockFace(ctx, canvas, canvas.width / 2);
+      
+      // Update every second
+      setInterval(() => {
+        drawClockFace(ctx, canvas, canvas.width / 2);
+        updateDigitalClock();
+      }, 1000);
+      
+      // Initial digital clock update
+      updateDigitalClock();
+    }
+
+    function drawClockFace(ctx, canvas, radius) {
+      // Clear the entire canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Save the context state
+      ctx.save();
+      
+      // Move to center
+      ctx.translate(radius, radius);
+      
+      // Adjust radius for border
+      const actualRadius = radius - 20;
+      
+      // Draw the outer circle with gradient
+      const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, actualRadius);
+      gradient.addColorStop(0, '#ffffff');
+      gradient.addColorStop(0.7, '#f8fafc');
+      gradient.addColorStop(1, '#e2e8f0');
+      
+      ctx.beginPath();
+      ctx.arc(0, 0, actualRadius, 0, 2 * Math.PI);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      
+      // Border
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      // Inner decorative circles
+      ctx.beginPath();
+      ctx.arc(0, 0, actualRadius - 15, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      // Draw numbers
+      drawNumbers(ctx, actualRadius);
+      
+      // Draw hour markers
+      drawMarkers(ctx, actualRadius);
+      
+      // Draw hands
+      drawTime(ctx, actualRadius);
+      
+      // Draw center dot with gradient
+      const centerGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 8);
+      centerGradient.addColorStop(0, '#667eea');
+      centerGradient.addColorStop(1, '#764ba2');
+      
+      ctx.beginPath();
+      ctx.arc(0, 0, 8, 0, 2 * Math.PI);
+      ctx.fillStyle = centerGradient;
+      ctx.fill();
+      
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Restore the context state
+      ctx.restore();
+    }
+
+    function drawNumbers(ctx, radius) {
+      const fontSize = Math.max(16, radius / 8);
+      ctx.font = `bold ${fontSize}px 'Segoe UI', Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#1e293b';
+      
+      for (let num = 1; num <= 12; num++) {
+        const angle = (num - 3) * (Math.PI / 6);
+        const x = Math.cos(angle) * (radius - 35);
+        const y = Math.sin(angle) * (radius - 35);
+        ctx.fillText(num.toString(), x, y);
+      }
+    }
+
+    function drawMarkers(ctx, radius) {
+      // Hour markers
+      ctx.strokeStyle = '#475569';
+      for (let i = 0; i < 12; i++) {
+        const angle = i * Math.PI / 6;
+        ctx.save();
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.moveTo(0, -(radius - 10));
+        ctx.lineTo(0, -(radius - 25));
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.restore();
+      }
+      
+      // Minute markers
+      ctx.strokeStyle = '#94a3b8';
+      for (let i = 0; i < 60; i++) {
+        if (i % 5 !== 0) {
+          const angle = i * Math.PI / 30;
+          ctx.save();
+          ctx.rotate(angle);
+          ctx.beginPath();
+          ctx.moveTo(0, -(radius - 10));
+          ctx.lineTo(0, -(radius - 18));
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    }
+
+    function drawTime(ctx, radius) {
+      const now = new Date();
+      const hour = now.getHours() % 12;
+      const minute = now.getMinutes();
+      const second = now.getSeconds();
+
+      // Hour hand
+      const hourAngle = (hour + minute / 60) * Math.PI / 6 - Math.PI / 2;
+      drawHand(ctx, hourAngle, radius * 0.5, Math.max(8, radius / 20), '#1e293b');
+
+      // Minute hand
+      const minAngle = (minute + second / 60) * Math.PI / 30 - Math.PI / 2;
+      drawHand(ctx, minAngle, radius * 0.75, Math.max(6, radius / 25), '#475569');
+
+      // Second hand
+      const secAngle = second * Math.PI / 30 - Math.PI / 2;
+      drawHand(ctx, secAngle, radius * 0.85, Math.max(2, radius / 60), '#ef4444');
+    }
+
+    function drawHand(ctx, angle, length, width, color) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.lineCap = 'round';
+      
+      // Add shadow for depth
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+      ctx.shadowBlur = 2;
+      ctx.shadowOffsetX = 1;
+      ctx.shadowOffsetY = 1;
+      
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(angle) * length, Math.sin(angle) * length);
+      ctx.stroke();
+      
+      ctx.restore();
+    }
+
+function updateActivity() {
+  fetch('http://127.0.0.1:5000/current_activity')
+    .then(res => {
+      if (!res.ok) {
+        throw new Error('Server response not OK');
+      }
+      return res.json();
+    })
+    .then(data => {
+      const activity = document.getElementById("activity");
+      const countdown = document.getElementById("countdown");
+      const overtimeIndicator = document.getElementById("overtime-indicator");
+
+      // Hide overtime indicator by default
+      overtimeIndicator.style.display = 'none';
+
+      // Clear any previous classes
+      activity.classList.remove('status-offline');
+      countdown.classList.remove('status-offline');
+
+      const eventTitle = data.event_title || "Unknown Event";
+      const activityTitle = data.title || "No activity";
+
+      activity.innerText = `Now: ${activityTitle} (${eventTitle})`;
+
+      if (data.end_time) {
+        const now = new Date();
+        const end = new Date(now.toDateString() + ' ' + data.end_time);
+        const diff = Math.floor((end - now) / 1000);
+
+        if (diff > 0) {
+          const hours = Math.floor(diff / 3600);
+          const mins = Math.floor((diff % 3600) / 60);
+          const secs = diff % 60;
+
+          // Apply blinking animation if less than 3 minutes remain
+          if (diff <= 180) { // 3 minutes = 180 seconds
+            countdown.style.animation = 'blinking 1s infinite';
+          } else {
+            countdown.style.animation = 'none';
+          }
+
+          countdown.innerText =
+            hours > 0
+              ? `Ends in: ${hours}h ${mins}m ${secs}s`
+              : `Ends in: ${mins}m ${secs}s`;
+        } else {
+          // Activity has gone into overtime
+          const overtimeDiff = Math.abs(diff);
+          const overtimeMins = Math.floor(overtimeDiff / 60);
+          const overtimeSecs = overtimeDiff % 60;
+          countdown.innerText = `Overtime: ${overtimeMins}m ${overtimeSecs}s`;
+          overtimeIndicator.style.display = 'block'; // Show the red warning
+          countdown.style.animation = 'none'; // Stop blinking
+        }
+      } else {
+        countdown.innerText = "No end time specified";
+        countdown.style.animation = 'none';
+      }
+    })
+    .catch(err => {
+      console.error('Failed to fetch activity:', err);
+      const activity = document.getElementById("activity");
+      const countdown = document.getElementById("countdown");
+
+      activity.innerText = "Activity: Connection Error";
+      countdown.innerText = "Server offline - Check connection";
+
+      activity.classList.add('status-offline');
+      countdown.classList.add('status-offline');
+      countdown.style.animation = 'none';
+    });
+}
+        // Sidebar toggle functionality
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    
+    menuToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('active');
+    });
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 768 && 
+          !sidebar.contains(e.target) && 
+          e.target !== menuToggle) {
+        sidebar.classList.remove('active');
+      }
+    });
+
+    
+
+    // Check authentication
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!AuthService.isAuthenticated()) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // Display current user info
+      const user = AuthService.getCurrentUser();
+      if (user) {
+        document.getElementById('userAvatar').textContent = 
+          user.name ? user.name.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase();
+      }
+      
+    });
+    
+   
+
+    // Initialize the clock and activity updates
+    drawClock();
+    updateActivity();
+    setInterval(updateActivity, 5000);
+  </script>
+  <script>
+// Listen for real-time updates
+function setupEventStream() {
+  const eventSource = new EventSource('http://127.0.0.1:5000/stream');
+
+  eventSource.onmessage = function(event) {
+    console.log('Update received:', event.data);
+    updateActivity(); // Force refresh current activity
+  };
+
+  eventSource.onerror = function(err) {
+    console.error('SSE Error:', err);
+    setTimeout(setupEventStream, 5000);
+    eventSource.close();
+  };
+}
+
+// Start listening after page loads
+document.addEventListener('DOMContentLoaded', () => {
+  setupEventStream();
+});
+</script>
+</body>
+</html>

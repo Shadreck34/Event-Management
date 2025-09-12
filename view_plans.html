@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View Plans - Church Planner</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+   <link rel="stylesheet" href="stylenew.css">
+  <link rel="stylesheet" href="view.css">
+  
+  
+</head>
+<script src="auth.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+    // Check authentication
+    if (!AuthService.isAuthenticated()) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    // Check if user has at least viewer role
+    if (!AuthService.hasRole('viewer')) {
+        showError("You don't have permission to view plans");
+        window.location.href = 'index.html';
+        return;
+    }
+
+    // Display current user info
+    const user = AuthService.getCurrentUser();
+    if (user && document.getElementById('userName')) {
+        document.getElementById('userName').textContent = user.name || user.email;
+    }
+
+    // Set up logout button
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            AuthService.logout();
+        });
+    }
+
+    // Initialize page
+    initializeFilters();
+    loadEvents();
+});
+</script>
+<body>
+   <div class="dashboard">
+        <!-- Mobile Menu Toggle -->
+        <button class="menu-toggle" id="menuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h2><i class="fas fa-clock"></i> Smart Clock</h2>
+    </div>
+    <div class="nav-menu">
+        <div class="nav-item">
+            <a href="index.html" class="nav-link">
+                <i class="fas fa-home"></i> Live Dashboard
+            </a>
+        </div>
+        <div class="nav-item">
+            <a href="start_planning.html" class="nav-link">
+                <i class="fas fa-calendar-plus"></i> Schedule Event
+            </a>
+        </div>
+        <div class="nav-item">
+            <a href="view_plans.html" class="nav-link active">
+                <i class="fas fa-calendar-alt"></i> View Events
+            </a>
+        </div>
+        <div class="nav-item">
+            <a href="reports.html" class="nav-link">
+                <i class="fas fa-chart-bar"></i> Analytics & Reports
+            </a>
+        </div>
+        <div class="nav-item">
+            <a href="admin.html" class="nav-link">
+                <i class="fas fa-users-cog"></i> User Management
+            </a>
+        </div>
+    </div>
+</div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <div class="header">
+        <h1><i class="fas fa-calendar-alt"></i> View Plans</h1>
+        <div class="user-info">
+          <div class="user-avatar" id="userAvatar">AD</div>
+          <button class="logout-btn always-allowed" id="logoutBtn">
+            <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Enhanced Filters with Auto-Apply -->
+      <div class="filters">
+        <div class="filter-group">
+          <label for="timeFilter">
+            <i class="fas fa-clock"></i> Time Period
+          </label>
+          <select id="timeFilter" class="form-control always-enabled">
+            <option value="upcoming">All Upcoming Events</option>
+            <option value="past">Past Events</option>
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="nextweek">Next Week</option>
+            <option value="month">This Month</option>
+            <option value="nextmonth">Next Month</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="typeFilter">
+            <i class="fas fa-tag"></i> Event Type
+          </label>
+          <select id="typeFilter" class="form-control always-enabled">
+            <option value="all">All Types</option>
+            <!-- Event types will be loaded dynamically -->
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="searchFilter">
+            <i class="fas fa-search"></i> Search
+          </label>
+          <input type="text" id="searchFilter" class="form-control search-input always-enabled" 
+                 placeholder="Search events by title...">
+        </div>
+        <div class="filter-status">
+          <span id="filterStatus" class="filter-count">Loading events...</span>
+          <button class="btn btn-secondary btn-sm" id="clearFilters" title="Clear all filters">
+            <i class="fas fa-times"></i> Clear Filters
+          </button>
+        </div>
+      </div>
+
+      <div id="message"></div>
+
+      <!-- Events List -->
+      <div id="eventsContainer" class="card">
+        <div class="card-header">
+          <h2><i class="fas fa-list"></i> <span id="eventsTitle">Events</span></h2>
+          <div class="card-header-actions">
+            <button class="btn btn-info btn-sm" id="refreshEvents" title="Refresh events">
+              <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="eventsTableBody">
+              <tr>
+                <td colspan="6" class="loading-row">
+                  <i class="fas fa-spinner fa-spin"></i> Loading events...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Bulletin View -->
+      <div id="bulletinView" class="card" style="display: none;">
+        <div class="card-header">
+          <h2 id="eventHeader"><i class="fas fa-list-ul"></i> Bulletin Details</h2>
+        </div>
+        <div id="eventSummary" class="card-body event-summary"></div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Time</th>
+                <th>Title</th>
+                <th>Duration</th>
+                <th>Preacher</th>
+                <th>Language</th>
+                <th>Category</th>
+              </tr>
+            </thead>
+            <tbody id="bulletinDetails"></tbody>
+          </table>
+        </div>
+        <div style="margin-top: 20px;">
+          <button class="btn btn-info print-btn always-allowed" onclick="printBulletin()">
+            <i class="fas fa-print"></i> Print Bulletin
+          </button>
+          <button class="btn btn-secondary always-allowed" onclick="hideBulletin()">
+            <i class="fas fa-arrow-left"></i> Back to Events
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let allEvents = [];
+    let currentFilters = {
+      time: 'upcoming',
+      type: 'all',
+      search: ''
+    };
+    let filterTimeout = null;
+
+    // Utility functions
+    function showMessage(message, type = 'success') {
+      const messageDiv = document.getElementById('message');
+      const icon = type === 'success' ? 'fa-check-circle' : 
+                  type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+      messageDiv.innerHTML = `
+        <div class="alert alert-${type}">
+          <i class="fas ${icon}"></i> ${message}
+        </div>
+      `;
+      setTimeout(() => messageDiv.innerHTML = '', 5000);
+    }
+
+    function showError(message) {
+      showMessage(message, 'error');
+    }
+
+    function updateFilterStatus(filteredCount, totalCount) {
+      const statusElement = document.getElementById('filterStatus');
+      const titleElement = document.getElementById('eventsTitle');
+      
+      if (filteredCount === totalCount) {
+        statusElement.textContent = `Showing all ${totalCount} events`;
+        titleElement.textContent = 'Events';
+      } else {
+        statusElement.textContent = `Showing ${filteredCount} of ${totalCount} events`;
+        titleElement.textContent = `Filtered Events (${filteredCount})`;
+      }
+    }
+
+    // API functions with error handling
+    async function apiCall(url, options = {}) {
+      try {
+          const response = await authFetch(url, {
+              headers: {
+                  'Content-Type': 'application/json',
+                  ...options.headers
+              },
+              ...options
+          });
+          
+          if (!response.ok) {
+              const error = await response.json();
+              throw new Error(error.error || `HTTP ${response.status}`);
+          }
+          
+          return await response.json();
+      } catch (error) {
+          console.error('API Error:', error);
+          // Redirect to login if token is missing/invalid
+          if (error.message.includes('Token') || error.message.includes('auth')) {
+              window.location.href = 'login.html';
+          }
+          throw error;
+      }
+    }
+
+    // Initialize filters with auto-apply functionality
+    function initializeFilters() {
+      const timeFilter = document.getElementById('timeFilter');
+      const typeFilter = document.getElementById('typeFilter');
+      const searchFilter = document.getElementById('searchFilter');
+      const clearFilters = document.getElementById('clearFilters');
+      const refreshEvents = document.getElementById('refreshEvents');
+
+      // Auto-apply filters when they change
+      timeFilter.addEventListener('change', (e) => {
+        currentFilters.time = e.target.value;
+        applyFilters();
+      });
+
+      typeFilter.addEventListener('change', (e) => {
+        currentFilters.type = e.target.value;
+        applyFilters();
+      });
+
+      // Debounce search input to avoid too many filter calls
+      searchFilter.addEventListener('input', (e) => {
+        currentFilters.search = e.target.value.trim().toLowerCase();
+        
+        // Clear previous timeout
+        if (filterTimeout) {
+          clearTimeout(filterTimeout);
+        }
+        
+        // Set new timeout for search
+        filterTimeout = setTimeout(() => {
+          applyFilters();
+        }, 300); // 300ms delay for search
+      });
+
+      // Clear all filters
+      clearFilters.addEventListener('click', () => {
+        timeFilter.value = 'upcoming';
+        typeFilter.value = 'all';
+        searchFilter.value = '';
+        
+        currentFilters = {
+          time: 'upcoming',
+          type: 'all',
+          search: ''
+        };
+        
+        applyFilters();
+      });
+
+      // Refresh events
+      refreshEvents.addEventListener('click', () => {
+        loadEvents(true); // Force refresh
+      });
+
+      // Load event types for filter
+      loadEventTypes();
+    }
+
+    // Load event types for the filter dropdown
+    async function loadEventTypes() {
+      try {
+        const eventTypes = await apiCall(`${API_BASE}/event_types`);
+        const typeFilter = document.getElementById('typeFilter');
+        
+        // Clear existing options except "All Types"
+        while (typeFilter.children.length > 1) {
+          typeFilter.removeChild(typeFilter.lastChild);
+        }
+        
+        // Add event types
+        eventTypes.forEach(type => {
+          const option = document.createElement('option');
+          option.value = type.name;
+          option.textContent = type.name;
+          typeFilter.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Failed to load event types:', error);
+      }
+    }
+
+    // Load events from API
+    async function loadEvents(forceRefresh = false) {
+      try {
+        // Show loading state
+        const tbody = document.getElementById('eventsTableBody');
+        if (tbody.children.length === 0 || forceRefresh) {
+          tbody.innerHTML = '<tr><td colspan="6" class="loading-row"><i class="fas fa-spinner fa-spin"></i> Loading events...</td></tr>';
+        }
+
+        // Fetch events from API
+        const events = await apiCall(`${API_BASE}/events`);
+        
+        // Process events with date information
+        allEvents = events.map(event => {
+          const eventDate = new Date(event.event_date);
+          const now = new Date();
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          
+          // Calculate week boundaries (Sunday to Saturday)
+          const weekStart = new Date(today);
+          weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekEnd.getDate() + 6);
+          
+          // Calculate next week boundaries
+          const nextWeekStart = new Date(weekStart);
+          nextWeekStart.setDate(nextWeekStart.getDate() + 7);
+          const nextWeekEnd = new Date(nextWeekStart);
+          nextWeekEnd.setDate(nextWeekEnd.getDate() + 6);
+          
+          // Calculate month boundaries
+          const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+          const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          
+          // Calculate next month boundaries
+          const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+          const nextMonthEnd = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+
+          return {
+            ...event,
+            dateObj: eventDate,
+            isPast: eventDate < today,
+            isToday: eventDate.toDateString() === today.toDateString(),
+            isThisWeek: eventDate >= weekStart && eventDate <= weekEnd,
+            isNextWeek: eventDate >= nextWeekStart && eventDate <= nextWeekEnd,
+            isThisMonth: eventDate >= monthStart && eventDate <= monthEnd,
+            isNextMonth: eventDate >= nextMonthStart && eventDate <= nextMonthEnd
+          };
+        });
+
+        // Apply current filters
+        applyFilters();
+        
+      } catch (error) {
+        showError(`Failed to load events: ${error.message}`);
+        const tbody = document.getElementById('eventsTableBody');
+        tbody.innerHTML = '<tr><td colspan="6" class="error-row"><i class="fas fa-exclamation-triangle"></i> Failed to load events</td></tr>';
+      }
+    }
+
+    // Apply current filters to events
+    function applyFilters() {
+      if (!allEvents || allEvents.length === 0) {
+        updateFilterStatus(0, 0);
+        return;
+      }
+
+      let filteredEvents = [...allEvents];
+
+      // Apply time period filter
+      switch(currentFilters.time) {
+        case 'past':
+          filteredEvents = filteredEvents.filter(e => e.isPast);
+          break;
+        case 'today':
+          filteredEvents = filteredEvents.filter(e => e.isToday);
+          break;
+        case 'week':
+          filteredEvents = filteredEvents.filter(e => e.isThisWeek);
+          break;
+        case 'nextweek':
+          filteredEvents = filteredEvents.filter(e => e.isNextWeek);
+          break;
+        case 'month':
+          filteredEvents = filteredEvents.filter(e => e.isThisMonth);
+          break;
+        case 'nextmonth':
+          filteredEvents = filteredEvents.filter(e => e.isNextMonth);
+          break;
+        default: // 'upcoming'
+          filteredEvents = filteredEvents.filter(e => !e.isPast);
+      }
+
+      // Apply event type filter
+      if (currentFilters.type !== 'all') {
+        filteredEvents = filteredEvents.filter(e => e.event_type === currentFilters.type);
+      }
+
+      // Apply search filter
+      if (currentFilters.search) {
+        filteredEvents = filteredEvents.filter(e => 
+          e.title.toLowerCase().includes(currentFilters.search) ||
+          e.event_type.toLowerCase().includes(currentFilters.search)
+        );
+      }
+
+      // Sort events by date
+      filteredEvents.sort((a, b) => a.dateObj - b.dateObj);
+
+      // Update filter status
+      updateFilterStatus(filteredEvents.length, allEvents.length);
+
+      // Render filtered events
+      renderEvents(filteredEvents);
+    }
+
+    // Render events in the table
+    function renderEvents(events) {
+      const tbody = document.getElementById('eventsTableBody');
+      tbody.innerHTML = "";
+      
+      if (events.length === 0) {
+        const noEventsMessage = currentFilters.search ? 
+          `No events found matching "${currentFilters.search}"` :
+          'No events found matching your criteria.';
+        tbody.innerHTML = `<tr><td colspan="6" class="no-events">${noEventsMessage}</td></tr>`;
+        return;
+      }
+
+      // Group events by category for better organization
+      const groupedEvents = {
+        today: [],
+        thisWeek: [],
+        nextWeek: [],
+        thisMonth: [],
+        nextMonth: [],
+        future: [],
+        past: []
+      };
+
+      events.forEach(event => {
+        if (event.isToday) {
+          groupedEvents.today.push(event);
+        } else if (event.isThisWeek) {
+          groupedEvents.thisWeek.push(event);
+        } else if (event.isNextWeek) {
+          groupedEvents.nextWeek.push(event);
+        } else if (event.isThisMonth) {
+          groupedEvents.thisMonth.push(event);
+        } else if (event.isNextMonth) {
+          groupedEvents.nextMonth.push(event);
+        } else if (event.isPast) {
+          groupedEvents.past.push(event);
+        } else {
+          groupedEvents.future.push(event);
+        }
+      });
+
+      // Helper function to render a group of events
+      const renderGroup = (groupEvents, title) => {
+        if (groupEvents.length === 0) return;
+        
+        // Add group header row (only if we have multiple groups)
+        const hasMultipleGroups = Object.values(groupedEvents).filter(arr => arr.length > 0).length > 1;
+        if (hasMultipleGroups) {
+          const headerRow = document.createElement('tr');
+          headerRow.className = 'group-header';
+          headerRow.innerHTML = `<td colspan="6"><strong><i class="fas fa-calendar"></i> ${title}</strong></td>`;
+          tbody.appendChild(headerRow);
+        }
+        
+        // Add events
+        groupEvents.forEach(event => {
+          const row = document.createElement('tr');
+          const eventDate = event.dateObj.toLocaleDateString();
+          const isToday = event.isToday;
+          const isPast = event.isPast;
+          
+          row.className = isToday ? 'today-event' : (isPast ? 'past-event' : '');
+          
+          row.innerHTML = `
+            <td>
+              ${event.title}
+              ${isToday ? '<span class="badge today-badge">Today</span>' : ''}
+              ${isPast ? '<span class="badge past-badge">Past</span>' : ''}
+            </td>
+            <td>${event.event_type}</td>
+            <td>${eventDate}</td>
+            <td class="time-display">${event.start_time}</td>
+            <td class="time-display">${event.end_time}</td>
+            <td class="action-buttons">
+              <button class="view-btn always-allowed" onclick="viewBulletin(${event.id}, '${event.title.replace(/'/g, "\\'")}', '${eventDate}', '${event.start_time}', '${event.end_time}')" title="View bulletin">
+                <i class="fas fa-eye"></i> View
+              </button>
+              <button class="btn btn-info btn-sm" onclick="recordAttendance(${event.id})" title="Record attendance">
+                <i class="fas fa-users"></i> Attendance
+              </button>
+              <button class="edit-btn" data-role-required="planner" onclick="editEvent(${event.id})" title="Edit event">
+                <i class="fas fa-edit"></i> Edit
+              </button>
+              <button class="delete-btn" data-role-required="admin" onclick="deleteEvent(${event.id}, '${event.title.replace(/'/g, "\\\'")}')" title="Delete event">
+                <i class="fas fa-trash"></i> Delete
+              </button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      };
+      
+      // Render groups based on current filter
+      switch(currentFilters.time) {
+        case 'past':
+          renderGroup(groupedEvents.past, 'Past Events');
+          break;
+        case 'today':
+          renderGroup(groupedEvents.today, 'Today');
+          break;
+        case 'week':
+          renderGroup(groupedEvents.today, 'Today');
+          renderGroup(groupedEvents.thisWeek, 'This Week');
+          break;
+        case 'nextweek':
+          renderGroup(groupedEvents.nextWeek, 'Next Week');
+          break;
+        case 'month':
+          renderGroup(groupedEvents.today, 'Today');
+          renderGroup(groupedEvents.thisWeek, 'This Week');
+          renderGroup(groupedEvents.thisMonth, 'This Month');
+          break;
+        case 'nextmonth':
+          renderGroup(groupedEvents.nextMonth, 'Next Month');
+          break;
+        default: // 'upcoming'
+          renderGroup(groupedEvents.today, 'Today');
+          renderGroup(groupedEvents.thisWeek, 'This Week');
+          renderGroup(groupedEvents.nextWeek, 'Next Week');
+          renderGroup(groupedEvents.thisMonth, 'This Month');
+          renderGroup(groupedEvents.nextMonth, 'Next Month');
+          renderGroup(groupedEvents.future, 'Future Events');
+      }
+
+      // Re-apply permissions to newly rendered elements
+      setTimeout(() => UIPermissions.reapplyPermissions(), 100);
+    }
+
+    // View bulletin details
+    async function viewBulletin(eventId, eventTitle, eventDate, startTime, endTime) {
+      try {
+        const bulletins = await apiCall(`${API_BASE}/events/${eventId}/bulletins`);
+        const table = document.getElementById('bulletinDetails');
+        const header = document.getElementById('eventHeader');
+        const summary = document.getElementById('eventSummary');
+
+        header.innerHTML = `<i class="fas fa-list-ul"></i> Bulletin for: ${eventTitle}`;
+        summary.innerHTML = `
+          <div class="event-info">
+            <div><strong><i class="fas fa-calendar"></i> Date:</strong> ${eventDate}</div>
+            <div><strong><i class="fas fa-clock"></i> Time:</strong> ${startTime} - ${endTime}</div>
+            <div><strong><i class="fas fa-list"></i> Total Items:</strong> ${bulletins.length}</div>
+          </div>
+        `;
+        
+        table.innerHTML = "";
+
+        if (bulletins.length === 0) {
+          table.innerHTML = '<tr><td colspan="7" class="no-events"><i class="fas fa-info-circle"></i> No bulletin items found for this event.</td></tr>';
+        } else {
+          bulletins.forEach((item, i) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${i + 1}</td>
+              <td class="time-display">${item.start_time}</td>
+              <td>${item.title}</td>
+              <td>${item.duration_minutes} min</td>
+              <td>${item.preacher || '-'}</td>
+              <td>${item.language || 'EN'}</td>
+              <td>${item.category || '-'}</td>
+            `;
+            table.appendChild(row);
+          });
+        }
+
+        // Show bulletin view and hide events table
+        document.getElementById('bulletinView').style.display = 'block';
+        document.getElementById('eventsContainer').style.display = 'none';
+      } catch (error) {
+        showError(`Failed to load bulletin: ${error.message}`);
+      }
+    }
+
+    function hideBulletin() {
+      document.getElementById('bulletinView').style.display = 'none';
+      document.getElementById('eventsContainer').style.display = 'block';
+    }
+
+    function printBulletin() {
+      window.print();
+    }
+
+    function editEvent(eventId) {
+      if (!checkPermission('edit')) return;
+      window.location.href = `edit_event.html?event_id=${eventId}`;
+    }
+
+    async function deleteEvent(eventId, eventTitle) {
+      if (!checkPermission('delete')) return;
+      
+      if (!confirm(`Are you sure you want to delete the event "${eventTitle}"? This will also delete all associated bulletin items.`)) {
+          return;
+      }
+
+      try {
+          await apiCall(`${API_BASE}/events/${eventId}`, {
+              method: 'DELETE'
+          });
+          
+          showMessage(`Event "${eventTitle}" deleted successfully!`);
+          loadEvents(true); // Force refresh after deletion
+      } catch (error) {
+          showError(`Failed to delete event: ${error.message}`);
+          
+          // If it's an authentication error, redirect to login
+          if (error.message.includes('Token') || error.message.includes('auth')) {
+              window.location.href = 'login.html';
+          }
+      }
+    }
+
+    function recordAttendance(eventId) {
+    if (!checkPermission('planner')) return;
+    
+    const count = prompt('Enter attendance count:');
+    if (count && !isNaN(count) && count >= 0) {
+        saveEventAttendance(eventId, parseInt(count));
+    }
+}
+
+async function saveEventAttendance(eventId, count) {
+    try {
+        await apiCall(`${API_BASE}/events/${eventId}/attendance`, {
+            method: 'POST',
+            body: JSON.stringify({ count: count })
+        });
+        showMessage('Attendance recorded successfully!', 'success');
+    } catch (error) {
+        showMessage(`Error recording attendance: ${error.message}`, 'error');
+    }
+}
+
+    // Mobile menu toggle
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    
+    menuToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+    });
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768 && 
+            !sidebar.contains(e.target) && 
+            e.target !== menuToggle) {
+            sidebar.classList.remove('active');
+        }
+    });
+  </script>
+
+  
+</body>
+</html>
