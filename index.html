@@ -124,8 +124,8 @@
       height: 100vh;
       max-width: 100vw;
       max-height: 100vh;
-      margin: 0;
-      padding: 40px;
+      margin: 0 !important;
+      padding: 0 !important;
       border-radius: 0;
       background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
       backdrop-filter: none;
@@ -136,21 +136,65 @@
       justify-content: center;
       align-items: center;
       z-index: 999;
+      overflow: hidden; /* Prevent scrollbars/cropping */
     }
-/* Hide sidebar and main layout completely in fullscreen */
-.fullscreen-mode .sidebar {
-  display: none !important;
-}
 
-.fullscreen-mode .main-content {
-  margin-left: 0 !important;
+/* Fix fullscreen cropping/zooming: ensure content fills viewport and is centered */
+body.fullscreen-mode,
+.container.fullscreen-mode {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  margin: 0 !important;
   padding: 0 !important;
+  border-radius: 0 !important;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%) !important;
+  box-shadow: none !important;
+  border: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  z-index: 9999 !important;
+  overflow: hidden !important;
 }
 
-.fullscreen-mode .header {
-  display: none !important;
+/* Make sure main content fills the screen */
+.fullscreen-mode .main-content {
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
 }
 
+/* Make sure clock and digital clock fit and do not overflow */
+.fullscreen-mode #clock,
+.fullscreen-mode #digitalClock,
+.fullscreen-mode #countdown {
+  max-width: 90vw !important;
+  max-height: 90vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Remove any extra spacing from fullscreen container children */
+.fullscreen-mode .container > * {
+  margin: 0 !important;
+  padding: 0.5em 0 !important;
+}
+
+/* Hide header/sidebar/menu in fullscreen */
+.fullscreen-mode .header,
+.fullscreen-mode .sidebar,
 .fullscreen-mode .menu-toggle {
   display: none !important;
 }
@@ -376,7 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="nav-item">
                     <a href="admin.html" class="nav-link">
-                        <i class="fas fa-users-cog"></i> User Management
+                        <i class="fas fa-users-cog"></i> Management Panel
                     </a>
                 </div>
             </div>
@@ -418,73 +462,62 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleFullscreen() {
       const body = document.body;
       const container = document.getElementById('mainContainer');
+      const mainContent = document.querySelector('.main-content');
+      const sidebar = document.querySelector('.sidebar');
+      const header = document.querySelector('.header');
       const canvas = document.getElementById('clock');
       const btn = document.getElementById('fullscreenBtn');
-      const nav = document.querySelector('.nav-container');
-      const sidebarHeader = document.querySelector('.sidebar-header');
-  
-    if (!isFullscreen) {
-      // Enter fullscreen
-      isFullscreen = true;
-      body.classList.add('fullscreen-mode');
-      container.classList.add('fullscreen-mode');
-      btn.textContent = '✕ Exit Fullscreen';
-    
-      // Hide navigation and sidebar header
-      if (nav) nav.style.display = 'none';
-      if (sidebarHeader) sidebarHeader.style.display = 'none';
-    
-      // Resize canvas for fullscreen
-      const size = Math.min(window.innerWidth * 0.6, window.innerHeight * 0.6);
-      canvas.width = size;
-      canvas.height = size;
-    
-      // Try to enter browser fullscreen
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(err => {
-          console.log('Could not enter fullscreen mode:', err);
-        });
+
+      if (!isFullscreen) {
+        isFullscreen = true;
+        body.classList.add('fullscreen-mode');
+        container.classList.add('fullscreen-mode');
+        if (mainContent) mainContent.classList.add('fullscreen-mode');
+        if (sidebar) sidebar.classList.add('fullscreen-mode');
+        if (header) header.classList.add('fullscreen-mode');
+        btn.textContent = '✕ Exit Fullscreen';
+
+        // Resize canvas for fullscreen
+        const size = Math.min(window.innerWidth * 0.6, window.innerHeight * 0.6);
+        canvas.width = size;
+        canvas.height = size;
+
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        }
+      } else {
+        exitFullscreenMode();
       }
-    } else {
-      // Exit fullscreen
-      exitFullscreenMode();
+
+      setTimeout(() => {
+        drawClockFace(canvas.getContext('2d'), canvas, canvas.width / 2);
+      }, 100);
     }
-  
-    // Force clock redraw with new size
-    setTimeout(() => {
-      drawClockFace(canvas.getContext('2d'), canvas, canvas.width / 2);
-    }, 100);
-  }
 
 function exitFullscreenMode() {
   const body = document.body;
   const container = document.getElementById('mainContainer');
+  const mainContent = document.querySelector('.main-content');
+  const sidebar = document.querySelector('.sidebar');
+  const header = document.querySelector('.header');
   const canvas = document.getElementById('clock');
   const btn = document.getElementById('fullscreenBtn');
-  const nav = document.querySelector('.nav-container');
-  const sidebarHeader = document.querySelector('.sidebar-header');
-  
+
   isFullscreen = false;
   body.classList.remove('fullscreen-mode');
   container.classList.remove('fullscreen-mode');
+  if (mainContent) mainContent.classList.remove('fullscreen-mode');
+  if (sidebar) sidebar.classList.remove('fullscreen-mode');
+  if (header) header.classList.remove('fullscreen-mode');
   btn.textContent = '⛶ Fullscreen';
-  
-  // Show navigation and sidebar header
-  if (nav) nav.style.display = 'flex';
-  if (sidebarHeader) sidebarHeader.style.display = 'block';
-  
-  // Resize canvas back to normal
+
   canvas.width = 300;
   canvas.height = 300;
-  
-  // Exit browser fullscreen
+
   if (document.exitFullscreen) {
-    document.exitFullscreen().catch(err => {
-      console.log('Could not exit fullscreen mode:', err);
-    });
+    document.exitFullscreen().catch(() => {});
   }
-  
-  // Force clock redraw
+
   setTimeout(() => {
     drawClockFace(canvas.getContext('2d'), canvas, 150);
   }, 100);

@@ -1039,7 +1039,7 @@
                 </div>
                 <div class="nav-item">
                     <a href="admin.html" class="nav-link active">
-                        <i class="fas fa-users-cog"></i> User Management
+                        <i class="fas fa-users-cog"></i> Management Panel
                     </a>
                 </div>
             </div>
@@ -1320,21 +1320,20 @@
 
                     <!-- Control Panel Tab -->
                     <div class="tab-content" id="control-panel-tab">
-                        <div class="container" style="max-width:600px;margin:40px auto;">
-                            <h1><i class="fas fa-cogs"></i> Worship Control Panel</h1>
-                            <div class="activity-display">
-                                <p><strong>Current Activity:</strong> <span id="activity">Loading...</span></p>
-                                <p><strong>Event:</strong> <span id="event">--</span></p>
-                                <p><strong>Status:</strong> <span id="status">Waiting...</span></p>
-                            </div>
-                            <div class="btn-group" style="display:flex;gap:15px;justify-content:center;margin-top:20px;">
-                                <!--<button id="pauseBtn"><i class="fas fa-pause"></i> Pause</button>-->
-                                <button id="extendBtn"><i class="fas fa-plus"></i> Extend</button>
-                                <button id="endBtn"><i class="fas fa-stop"></i> End</button>
-                            </div>
-                            <p class="status" id="message">Ready to control.</p>
-                        </div>
-                    </div>
+    <div class="container" style="max-width:600px;margin:40px auto;">
+        <h1><i class="fas fa-cogs"></i> Worship Control Panel</h1>
+        <div class="activity-display">
+            <p><strong>Current Activity:</strong> <span id="activity">Loading...</span></p>
+            <p><strong>Event:</strong> <span id="event">--</span></p>
+            <p><strong>Status:</strong> <span id="status">Waiting...</span></p>
+        </div>
+        <div class="btn-group">
+            <button id="extendBtn"><i class="fas fa-plus"></i> Extend</button>
+            <button id="endBtn"><i class="fas fa-stop"></i> End</button>
+        </div>
+        <p class="status" id="message">Ready to control.</p>
+    </div>
+</div>
                 </div>
             </div>
         </div>
@@ -1472,11 +1471,6 @@
         }
 
         function setupControlPanelListeners() {
-            document.getElementById('pauseBtn').onclick = () => {
-                if (!isReady) return alert('System not ready. Please wait.');
-                if (!currentBulletinId) return alert('No active activity to pause.');
-                executeAction('pause');
-            };
             document.getElementById('extendBtn').onclick = () => {
                 if (!isReady) return alert('System not ready. Please wait.');
                 if (!currentBulletinId) return alert('No active activity to extend.');
@@ -2442,6 +2436,7 @@
                         const newValue = formatDateForDisplay(newData[field]) || 'Not set';
                         changes.push(`${fieldName} changed from ${oldValue} to ${newValue}`);
                     }
+                    // General case
                     else {
                         const oldValue = oldData[field] || 'Not set';
                         const newValue = newData[field] || 'Not set';

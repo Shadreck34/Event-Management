@@ -771,7 +771,7 @@
                 </div>
                 <div class="nav-item">
                     <a href="admin.html" class="nav-link">
-                        <i class="fas fa-users-cog"></i> User Management
+                        <i class="fas fa-users-cog"></i> Management Panel
                     </a>
                 </div>
             </div>
@@ -1905,6 +1905,39 @@ window.exportToPDF = exportToPDF;
         window.exportAttendanceToExcel = exportAttendanceToExcel;
         window.loadOvertimeData = loadOvertimeData;
         window.loadAttendanceData = loadAttendanceData;
+
+        async function saveAttendance(eventId) {
+    try {
+        const input = document.getElementById(`attendance-${eventId}`);
+        const count = parseInt(input.value, 10);
+        if (isNaN(count) || count < 0) {
+            showMessage('Please enter a valid attendance count.', 'error');
+            return;
+        }
+        const token = localStorage.getItem('accessToken');
+        const response = await fetch(`${API_BASE}/events/${eventId}/attendance`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ count })
+        });
+        const result = await response.json();
+        if (response.ok) {
+            showMessage(result.message || 'Attendance saved!', 'success');
+            // Optionally refresh attendance data to update status badge
+            await loadAttendanceData();
+        } else {
+            showMessage(result.error || 'Failed to save attendance.', 'error');
+        }
+    } catch (error) {
+        showMessage('Network error: ' + error.message, 'error');
+    }
+}
+
+// Make sure this is available globally for onclick in HTML
+window.saveAttendance = saveAttendance;
 </script>
 </body>
 </html>
