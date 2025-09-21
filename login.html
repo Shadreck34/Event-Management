@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Church Planner</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .auth-container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .auth-container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .auth-btn {
+            width: 100%;
+            padding: 10px;
+            background: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .auth-btn:hover {
+            background: #0056b3;
+        }
+        .auth-links {
+            margin-top: 15px;
+            text-align: center;
+        }
+        .error-message {
+            color: #dc3545;
+            margin-top: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <h2>Login</h2>
+        <div id="errorMessage" class="error-message"></div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="Enter your email">
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Enter your password">
+        </div>
+        <button id="loginBtn" class="auth-btn">Login</button>
+        <div class="auth-links">
+            Don't have an account? <a href="register.html">Register here</a>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorElement = document.getElementById('errorMessage');
+
+            errorElement.textContent = '';
+
+            if (!email || !password) {
+                errorElement.textContent = 'Please enter both email and password';
+                return;
+            }
+
+            try {
+                const response = await AuthService.login(email, password);
+                
+                // Redirect based on role
+                if (response.user.role === 'superadmin' || response.user.role === 'admin') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                errorElement.textContent = error.message;
+            }
+        });
+
+        // Allow login on Enter key
+        document.getElementById('password').addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('loginBtn').click();
+            }
+        });
+
+        
+            // Mobile menu toggle
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.getElementById('sidebar');
+            
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+            });
+
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth <= 768 && 
+                    !sidebar.contains(e.target) && 
+                    e.target !== menuToggle) {
+                    sidebar.classList.remove('active');
+                }
+            });
+            
+    </script>
+</body>
+</html>

@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports & Analytics - Church Planner</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Required Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="stylenew.css">
+<style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #06b6d4;
+            --light: #f8f9fa;
+            --dark: #1f2937;
+            --light: #f9fafb;
+            --white: #ffffff;
+            --sidebar-width: 250px;
+            --border: #e5e7eb;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 2rem;
+            background: var(--white);
+            padding: 6px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .tab {
+            flex: 1;
+            padding: 0.8rem 1.5rem;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--gray);
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+        .tab:hover {
+            background: var(--light);
+            color: var(--dark);
+        }
+        .tab.active {
+            background: var(--primary);
+            color: var(--white);
+            transform: scale(1.02);
+        }
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Filters */
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+        .form-control {
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            background: var(--white);
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
+        /* Statistics Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 1.8rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        .stat-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            color: white;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+        .stat-icon.success {
+            background: linear-gradient(135deg, var(--success), #059669);
+        }
+        .stat-icon.warning {
+            background: linear-gradient(135deg, var(--warning), #ea580c);
+        }
+        .stat-icon.info {
+            background: linear-gradient(135deg, var(--info), #0284c7);
+        }
+        .stat-content h3 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 0.25rem;
+            line-height: 1;
+        }
+        .stat-content p {
+            color: var(--gray);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        /* Chart Styles */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .chart-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .chart-card h3 {
+            color: var(--dark);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        .chart-container {
+            position: relative;
+            height: 320px;
+            margin-top: 1rem;
+        }
+        /* Data Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .data-table th {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            padding: 1.2rem;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border);
+        }
+        .data-table td {
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        .data-table tbody tr:hover {
+            background: #f8fafc;
+        }
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        /* Status Badges */
+        .status-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status-badge.danger {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        .status-badge.success {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        .status-badge.warning {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        /* Attendance Section */
+        .attendance-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+        .attendance-section h3 {
+            color: var(--dark);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        .attendance-grid {
+            display: grid;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .event-attendance {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .event-attendance:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+            border-color: var(--primary);
+        }
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        .event-header h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+        .event-header p {
+            color: var(--gray);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .event-date-label {
+            background: var(--info);
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .event-type {
+            color: var(--gray);
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .attendance-status .badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .badge.success {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        .badge.warning {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        .badge.info {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+        .attendance-input {
+            border-top: 1px solid var(--border);
+            padding-top: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .attendance-input label {
+            font-weight: 500;
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+        .attendance-input input {
+            flex: 0 0 120px;
+            padding: 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        /* Export Section */
+        .export-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+        .export-section h3 {
+            color: var(--dark);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        .export-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        /* Button Styles */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-family: inherit;
+            font-size: 0.95rem;
+            text-decoration: none;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--white);
+        }
+        .btn-primary:hover {
+            box-shadow: 0 8px 25px rgba(67, 97, 238, 0.3);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: var(--white);
+        }
+        .btn-success:hover {
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+        }
+        .btn-info {
+            background: linear-gradient(135deg, var(--info), #0284c7);
+            color: var(--white);
+        }
+        .btn-info:hover {
+            box-shadow: 0 8px 25px rgba(6, 182, 212, 0.3);
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning), #ea580c);
+            color: var(--white);
+        }
+        .btn-warning:hover {
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+        }
+        .btn-export {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: var(--white);
+        }
+        .btn-export:hover {
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+        }
+        /* Alert Messages */
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-weight: 500;
+        }
+        .alert-success {
+            background: #dcfce7;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+        .alert-error {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fca5a5;
+        }
+        .alert-info {
+            background: #dbeafe;
+            color: #2563eb;
+            border: 1px solid #93c5fd;
+        }
+        /* Loading States */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--gray);
+        }
+        .loading i {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+            .menu-toggle {
+                display: block;
+            }
+            .header {
+                margin-top: 4rem;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+                padding: 1.2rem;
+            }
+            .header h1 {
+                font-size: 1.6rem;
+            }
+            .user-info {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .tab-nav {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .tab {
+                padding: 0.7rem;
+                text-align: center;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+            .export-options {
+                grid-template-columns: 1fr;
+            }
+            .filters {
+                grid-template-columns: 1fr;
+            }
+            .attendance-input {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.8rem;
+            }
+            .attendance-input input {
+                flex: 1;
+                min-width: 100%;
+            }
+        }
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 0.5rem;
+            }
+            .header {
+                padding: 1rem;
+                margin-top: 3.5rem;
+            }
+            .header h1 {
+                font-size: 1.4rem;
+            }
+            .stat-card {
+                padding: 1.2rem;
+                flex-direction: column;
+                text-align: center;
+            }
+            .stat-icon {
+                width: 56px;
+                height: 56px;
+            }
+            .chart-card,
+            .attendance-section,
+            .export-section {
+                padding: 1.2rem;
+            }
+        }
+        /* Additional Enhancements */
+        .table-responsive {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: var(--gray);
+        }
+        .no-data i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        /* Animation for loading */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .fa-spin {
+            animation: spin 1s linear infinite;
+        }
+        /* Print Styles */
+        @media print {
+            .sidebar, 
+            .menu-toggle, 
+            .logout-btn, 
+            .export-section,
+            .filters {
+                display: none !important;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 0;
+            }
+            .chart-card {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<script src="auth.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+    // Check authentication
+    if (!AuthService.isAuthenticated()) {
+        window.location.href = 'login.html';
+        return;
+    }
+    // Check if user has at least viewer role
+    if (!AuthService.hasRole('planner')) {
+        showError("You don't have permission to view plans");
+        window.location.href = 'index.html';
+        return;
+    }
+    // Display current user info
+    const user = AuthService.getCurrentUser();
+    if (user && document.getElementById('userName')) {
+        document.getElementById('userName').textContent = user.name || user.email;
+    }
+    // Set up logout button
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            AuthService.logout();
+        });
+    }
+});
+</script>
+<body>
+    <div class="dashboard">
+        <!-- Mobile Menu Toggle -->
+        <button class="menu-toggle" id="menuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-clock"></i> Smart Clock</h2>
+            </div>
+            <div class="nav-menu">
+                <div class="nav-item">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home"></i> Live Dashboard
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="start_planning.html" class="nav-link">
+                        <i class="fas fa-calendar-plus"></i> Schedule Event
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="view_plans.html" class="nav-link">
+                        <i class="fas fa-calendar-alt"></i> View Events
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="reports.html" class="nav-link active">
+                        <i class="fas fa-chart-bar"></i> Analytics & Reports
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="admin.html" class="nav-link">
+                        <i class="fas fa-users-cog"></i> Management Panel
+                    </a>
+                </div>
+            </div>
+        </div>
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1><i class="fas fa-chart-bar"></i> Reports & Analytics</h1>
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">AD</div>
+                    <button class="logout-btn" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+                    </button>
+                </div>
+            </div>
+            <div id="message"></div>
+            <!-- Tab Navigation -->
+            <div class="tab-nav">
+                <button class="tab active" data-tab="overview">
+                    <i class="fas fa-chart-line"></i> Overview
+                </button>
+                <button class="tab" data-tab="attendance">
+                    <i class="fas fa-users"></i> Attendance
+                </button>
+                <button class="tab" data-tab="overtime">
+                    <i class="fas fa-clock"></i> Overtime & Early Ends
+                </button>
+                <button class="tab" data-tab="export">
+                    <i class="fas fa-download"></i> Export Data
+                </button>
+            </div>
+            <!-- Overview Tab -->
+            <div id="overview-tab" class="tab-content active">
+                <!-- Filter Section -->
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="dateRange"><i class="fas fa-calendar"></i> Date Range</label>
+                        <select id="dateRange" class="form-control">
+                            <option value="7">Last 7 days</option>
+                            <option value="30" selected>Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="365">Last year</option>
+                            <option value="all">All time</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="eventTypeFilter"><i class="fas fa-tag"></i> Event Type</label>
+                        <select id="eventTypeFilter" class="form-control">
+                            <option value="all">All Types</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>&nbsp;</label>
+                        <button class="btn btn-primary" onclick="refreshData()">
+                            <i class="fas fa-sync"></i> Refresh Data
+                        </button>
+                    </div>
+                </div>
+                <!-- Statistics Overview -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon primary">
+                            <i class="fas fa-calendar"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalEvents">0</h3>
+                            <p>Total Events</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon success">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalAttendance">0</h3>
+                            <p>Total Attendance</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon warning">
+                            <i class="fas fa-user-friends"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="avgAttendance">0</h3>
+                            <p>Average Attendance</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon info">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="avgDuration">0</h3>
+                            <p>Avg Event Duration (min)</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Charts -->
+                <div class="chart-grid">
+                    <div class="chart-card">
+                        <h3><i class="fas fa-line-chart"></i> Attendance Trends</h3>
+                        <div class="chart-container">
+                            <canvas id="attendanceChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3><i class="fas fa-pie-chart"></i> Events by Type</h3>
+                        <div class="chart-container">
+                            <canvas id="eventTypesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Attendance Tab -->
+            <div id="attendance-tab" class="tab-content">
+                <div class="attendance-section">
+                    <h3><i class="fas fa-clipboard-check"></i> Attendance Tracking</h3>
+                    <p>Mark attendance for upcoming and recent events</p>
+                    <div id="attendanceGrid" class="attendance-grid">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i> 
+                            <p>Loading events...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Overtime Tab -->
+            <div id="overtime-tab" class="tab-content">
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="overtimeDateRange"><i class="fas fa-calendar"></i> Date Range</label>
+                        <select id="overtimeDateRange" class="form-control" onchange="refreshOvertimeData()">
+                            <option value="7">Last 7 Days</option>
+                            <option value="30" selected>Last 30 Days</option>
+                            <option value="90">Last 90 Days</option>
+                            <option value="all">All Time</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>&nbsp;</label>
+                        <button onclick="exportOvertimeToExcel()" class="btn btn-export">
+                            <i class="fas fa-file-excel"></i> Export to Excel
+                        </button>
+                    </div>
+                    <div class="filter-group">
+                        <label>&nbsp;</label>
+                        <button onclick="exportToPrintablePDF()" class="btn btn-export">
+                            <i class="fas fa-print"></i> Print Report
+                        </button>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon danger">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalOvertime">0</h3>
+                            <p>Total Overtime Activities</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon warning">
+                            <i class="fas fa-balance-scale"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="netImpact">0</h3>
+                            <p>Net Time Impact (min)</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon success">
+                            <i class="fas fa-fast-forward"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalEarly">0</h3>
+                            <p>Total Early Ends</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon info">
+                            <i class="fas fa-calculator"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="avgOvertime">0</h3>
+                            <p>Avg Overtime (min)</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="overtimeTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-tasks"></i> Activity</th>
+                                <th><i class="fas fa-calendar"></i> Event</th>
+                                <th><i class="fas fa-calendar-day"></i> Date</th>
+                                <th><i class="fas fa-user"></i> Preacher</th>
+                                <th><i class="fas fa-clock"></i> Scheduled End</th>
+                                <th><i class="fas fa-clock"></i> Actual End</th>
+                                <th><i class="fas fa-stopwatch"></i> Delta (min)</th>
+                                <th><i class="fas fa-info-circle"></i> Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="8" class="loading">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading overtime data...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Export Tab -->
+            <div id="export-tab" class="tab-content">
+                <div class="export-section">
+                    <h3><i class="fas fa-download"></i> Export Data</h3>
+                    <p>Export reports and data in various formats for analysis and record-keeping</p>
+                    <div class="export-options">
+                        <button class="btn btn-success" onclick="exportToPDF()">
+                            <i class="fas fa-file-pdf"></i> Export Report to PDF
+                        </button>
+                        <button class="btn btn-info" onclick="exportToExcel()">
+                            <i class="fas fa-file-excel"></i> Export Events to Excel
+                        </button>
+                        <button class="btn btn-warning" onclick="exportAttendanceToExcel()">
+                            <i class="fas fa-table"></i> Export Attendance to Excel
+                        </button>
+                        <button class="btn btn-export" onclick="exportOvertimeToExcel()">
+                            <i class="fas fa-clock"></i> Export Overtime Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Global variables
+        let attendanceChart = null;
+        let eventTypesChart = null;
+        let currentData = {
+            statistics: {},
+            trends: [],
+            eventTypes: []
+        };
+        let overtimeData = [];
+function setupFilterListeners() {
+  const dateRange = document.getElementById('dateRange');
+  const eventTypeFilter = document.getElementById('eventTypeFilter');
+  // ✅ Refresh when either filter changes
+  dateRange.addEventListener('change', refreshData);
+  eventTypeFilter.addEventListener('change', refreshData);
+}
+// Call this in DOMContentLoaded
+document.addEventListener('DOMContentLoaded', async () => {
+  // ... auth checks ...
+  setupTabs();
+  setupFilterListeners(); // ← Add this!
+  await initializeDashboard();
+});
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check authentication (mock)
+            if (!AuthService.isAuthenticated()) {
+                console.log('Not authenticated');
+                return;
+            }
+            // Display current user info
+            const user = AuthService.getCurrentUser();
+            if (user) {
+                const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                document.getElementById('userAvatar').textContent = initials;
+            }
+            // Initialize the dashboard
+            await initializeDashboard();
+            // Setup event listeners
+            setupEventListeners();
+            // Setup mobile menu
+            setupMobileMenu();
+            // Setup tabs
+            setupTabs();
+            // Auto-refresh every 5 minutes
+            setInterval(refreshData, 5 * 60 * 1000);
+        });
+        function setupEventListeners() {
+            document.getElementById('logoutBtn').addEventListener('click', AuthService.logout);
+            document.getElementById('dateRange').addEventListener('change', refreshData);
+            document.getElementById('eventTypeFilter').addEventListener('change', refreshData);
+        }
+        function setupMobileMenu() {
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.getElementById('sidebar');
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+            });
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth <= 768 && 
+                    !sidebar.contains(e.target) && 
+                    e.target !== menuToggle) {
+                    sidebar.classList.remove('active');
+                }
+            });
+        }
+        function setupTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remove active class from all tabs and content
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    // Add active class to clicked tab and corresponding content
+                    tab.classList.add('active');
+                    const tabId = tab.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                    // Load data if needed
+                    if (tabId === 'overtime') {
+                        loadOvertimeData();
+                    } else if (tabId === 'attendance') {
+                        loadAttendanceData();
+                    }
+                });
+            });
+        }
+        async function initializeDashboard() {
+            try {
+                showMessage('Loading dashboard data...', 'info');
+                await Promise.all([
+                    loadEventTypes(),
+                    loadDashboardData(),
+                    loadAttendanceData()
+                ]);
+                hideMessage();
+            } catch (error) {
+                showMessage(`Error loading dashboard: ${error.message}`, 'error');
+                console.error('Dashboard initialization error:', error);
+            }
+        }
+        async function loadEventTypes() {
+            try {
+                const response = await authFetch(`${API_BASE}/event_types`);
+                const eventTypes = await response.json();
+                const select = document.getElementById('eventTypeFilter');
+                // Clear existing options except "All Types"
+                while (select.children.length > 1) {
+                    select.removeChild(select.lastChild);
+                }
+                eventTypes.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type.name;
+                    option.textContent = type.name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Failed to load event types:', error);
+            }
+        }
+        async function loadDashboardData() {
+            try {
+                const dateRange = document.getElementById('dateRange').value;
+                const eventType = document.getElementById('eventTypeFilter').value;
+                const params = new URLSearchParams({
+                    range: dateRange,
+                    type: eventType
+                });
+                const response = await authFetch(`${API_BASE}/reports/statistics?${params}`);
+                const data = await response.json();
+                currentData = {
+                    statistics: data.statistics,
+                    trends: data.trends,
+                    eventTypes: data.event_types
+                };
+                updateStatistics(data.statistics);
+                updateCharts(data);
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+                showMessage(`Failed to load statistics: ${error.message}`, 'error');
+            }
+        }
+        function updateStatistics(stats) {
+            document.getElementById('totalEvents').textContent = stats.total_events || 0;
+            document.getElementById('totalAttendance').textContent = (stats.total_attendance || 0).toLocaleString();
+            document.getElementById('avgAttendance').textContent = Math.round(stats.avg_attendance || 0);
+            document.getElementById('avgDuration').textContent = Math.round(stats.avg_duration || 0);
+        }
+       function updateCharts(data) {
+  updateAttendanceChart(data.trends || []);
+  updateEventTypesChart(data.event_types || []);
+}
+        function updateAttendanceChart(trendsData) {
+            const ctx = document.getElementById('attendanceChart').getContext('2d');
+            if (attendanceChart) {
+                attendanceChart.destroy();
+            }
+            const chartData = trendsData.slice(-14);
+            attendanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.map(d => new Date(d.date).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric' 
+                    })),
+                    datasets: [{
+                        label: 'Daily Attendance',
+                        data: chartData.map(d => d.attendance),
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#6366f1',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 3,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            cornerRadius: 8,
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    return new Date(chartData[tooltipItems[0].dataIndex].date).toLocaleDateString();
+                                },
+                                afterLabel: function(context) {
+                                    const dataIndex = context.dataIndex;
+                                    const eventCount = chartData[dataIndex].event_count;
+                                    return `Events: ${eventCount}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0,0,0,0.05)'
+                            },
+                            ticks: {
+                                color: '#6b7280'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#6b7280'
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+        function updateEventTypesChart(eventTypesData) {
+            const ctx = document.getElementById('eventTypesChart').getContext('2d');
+            if (eventTypesChart) {
+                eventTypesChart.destroy();
+            }
+            if (!eventTypesData || eventTypesData.length === 0) {
+                ctx.font = '16px Poppins';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#64748b';
+                ctx.fillText('No data available', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                return;
+            }
+            const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#8b5cf6', '#f97316'];
+            eventTypesChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: eventTypesData.map(d => d.event_type),
+                    datasets: [{
+                        data: eventTypesData.map(d => d.total_attendance),
+                        backgroundColor: colors.slice(0, eventTypesData.length),
+                        borderWidth: 0,
+                        hoverBorderWidth: 3,
+                        hoverBorderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                                font: {
+                                    family: 'Poppins',
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    const item = eventTypesData[context.dataIndex];
+                                    const total = eventTypesData.reduce((sum, d) => sum + d.total_attendance, 0);
+                                    const percentage = ((item.total_attendance / total) * 100).toFixed(1);
+                                    return [
+                                        `${item.event_type}: ${item.total_attendance}`,
+                                        `Events: ${item.event_count}`,
+                                        `Average: ${Math.round(item.avg_attendance)}`,
+                                        `${percentage}% of total`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
+        async function loadAttendanceData() {
+            try {
+                const response = await authFetch(`${API_BASE}/reports/upcoming-events`);
+                const events = await response.json();
+                renderAttendanceTracking(events);
+            } catch (error) {
+                console.error('Failed to load attendance data:', error);
+                showMessage(`Failed to load attendance data: ${error.message}`, 'error');
+            }
+        }
+        function renderAttendanceTracking(events) {
+            const container = document.getElementById('attendanceGrid');
+            container.innerHTML = '';
+            if (events.length === 0) {
+                container.innerHTML = `
+                    <div class="no-data">
+                        <i class="fas fa-calendar-times"></i>
+                        <p>No recent events found for attendance tracking.</p>
+                    </div>
+                `;
+                return;
+            }
+            events.forEach(event => {
+                const eventDiv = document.createElement('div');
+                eventDiv.className = 'event-attendance';
+                const eventDate = new Date(event.event_date);
+                const today = new Date();
+                const isToday = eventDate.toDateString() === today.toDateString();
+                const isPast = eventDate < today;
+                const hasAttendance = event.attendance !== null && event.attendance !== undefined;
+                let statusBadge = '';
+                if (hasAttendance) {
+                    statusBadge = `<span class="badge success"><i class="fas fa-check"></i> ${event.attendance}</span>`;
+                } else if (isPast) {
+                    statusBadge = `<span class="badge warning"><i class="fas fa-exclamation-triangle"></i> Missing</span>`;
+                } else {
+                    statusBadge = `<span class="badge info"><i class="fas fa-clock"></i> Pending</span>`;
+                }
+                const dateLabel = isToday ? 'Today' : 
+                                isPast ? 'Past Event' : 
+                                'Upcoming';
+                eventDiv.innerHTML = `
+                    <div class="event-header">
+                        <div>
+                            <h4>${event.title}</h4>
+                            <p>
+                                <i class="fas fa-calendar"></i> ${eventDate.toLocaleDateString()} 
+                                at ${event.start_time}
+                                <span class="event-date-label">${dateLabel}</span>
+                            </p>
+                            <small class="event-type">
+                                <i class="fas fa-tag"></i> ${event.event_type}
+                            </small>
+                        </div>
+                        <div class="attendance-status">
+                            ${statusBadge}
+                        </div>
+                    </div>
+                    <div class="attendance-input">
+                        <label for="attendance-${event.id}">Attendance Count:</label>
+                        <input type="number" id="attendance-${event.id}" class="form-control" 
+                               value="${event.attendance || ''}" 
+                               placeholder="Enter count" 
+                               min="0" 
+                               max="9999">
+                        <button class="btn btn-primary" onclick="saveAttendance(${event.id})">
+                            <i class="fas fa-save"></i> Save
+                        </button>
+                    </div>
+                `;
+                container.appendChild(eventDiv);
+            });
+        }
+        async function loadOvertimeData() {
+            try {
+                const range = document.getElementById('overtimeDateRange').value;
+                const response = await authFetch(`${API_BASE}/reports/overtime-activities?range=${range}`);
+                overtimeData = await response.json();
+                renderOvertimeTable(overtimeData);
+                updateOvertimeStats(overtimeData);
+            } catch (error) {
+                console.error('Failed to load overtime data:', error);
+                showMessage(`Failed to load overtime report: ${error.message}`, 'error');
+            }
+        }
+        function renderOvertimeTable(data) {
+            const tbody = document.querySelector('#overtimeTable tbody');
+            tbody.innerHTML = '';
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="no-data">
+                            <i class="fas fa-info-circle"></i>
+                            <p>No overtime activities found for the selected period</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            data.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.activity_title}</td>
+                    <td>${item.event_title}</td>
+                    <td>${new Date(item.event_date).toLocaleDateString()}</td>
+                    <td>${item.preacher}</td>
+                    <td>${item.original_end}</td>
+                    <td>${item.new_end}</td>
+                    <td style="font-weight:600; color: ${item.extended_by_minutes > 0 ? '#ef4444' : '#10b981'}">
+                        ${item.minutes_display} min
+                    </td>
+                    <td>
+                        <span class="status-badge ${item.status === 'Overtime' ? 'danger' : 'success'}">
+                            ${item.status}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        function updateOvertimeStats(data) {
+            const overtime = data.filter(d => d.extended_by_minutes > 0);
+            const early = data.filter(d => d.extended_by_minutes < 0);
+            const netMinutes = data.reduce((sum, d) => sum + d.extended_by_minutes, 0);
+            const avgOvertime = overtime.length > 0 ?
+                Math.round(overtime.reduce((sum, d) => sum + d.extended_by_minutes, 0) / overtime.length) : 0;
+            const avgEarly = early.length > 0 ? 
+                Math.round(Math.abs(early.reduce((sum, d) => sum + d.extended_by_minutes, 0) / early.length)) : 0;
+            document.getElementById('totalOvertime').textContent = overtime.length;
+            document.getElementById('totalEarly').textContent = early.length;
+            // ✅ FIXED: Round net impact to 2 decimal places
+            document.getElementById('netImpact').textContent = 
+                netMinutes > 0 ? `+${netMinutes.toFixed(2)}` : netMinutes.toFixed(2);
+        }
+        async function loadDashboardData() {
+  try {
+    const dateRange = document.getElementById('dateRange')?.value || '30';
+    const eventType = document.getElementById('eventTypeFilter')?.value || 'all';
+    const params = new URLSearchParams({ range: dateRange, type: eventType });
+    // ✅ Use authFetch for auth
+    const response = await authFetch(`${API_BASE}/reports/statistics?${params}`);
+    if (!response.ok) throw new Error('Failed to fetch statistics');
+    const data = await response.json();
+    // ✅ Store globally
+    currentData = data;
+    // ✅ Update UI
+    updateStatistics(data.statistics);
+    updateCharts(data);
+    showMessage('Dashboard updated successfully', 'success');
+  } catch (error) {
+    console.error('Failed to load dashboard data:', error);
+    showMessage(`Failed to load dashboard: ${error.message}`, 'error');
+  }
+}
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!AuthService.isAuthenticated()) {
+    window.location.href = 'login.html';
+    return;
+  }
+  if (!AuthService.hasRole('viewer')) {
+    showMessage("You don't have permission to view reports", 'error');
+    window.location.href = 'index.html';
+    return;
+  }
+  // ✅ Load dashboard data
+  await loadDashboardData();
+  // ✅ Set up auto-refresh
+  setInterval(loadDashboardData, 5 * 60 * 1000);
+  // ✅ Set up tab switching
+  setupTabs(); // ← Add this!
+  setupTabSwitching();
+  // ✅ Load dashboard data
+  await loadDashboardData();
+  // ✅ Set up auto-refresh
+  setInterval(loadDashboardData, 5 * 60 * 1000);
+  // ✅ Load other tabs on demand
+  document.querySelector('[data-tab="attendance"]').addEventListener('click', loadAttendanceData);
+  document.querySelector('[data-tab="overtime"]').addEventListener('click', loadOvertimeData);
+});
+function setupTabSwitching() {
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      const tabId = tab.getAttribute('data-tab');
+      document.getElementById(`${tabId}-tab`).classList.add('active');
+      if (tabId === 'overtime') loadOvertimeData();
+      if (tabId === 'attendance') loadAttendanceData();
+    });
+  });
+}
+        async function exportToPDF() {
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.width;
+    const margin = 15;
+    let y = 20;
+    // Title
+    doc.setFontSize(20);
+    doc.setTextColor(67, 97, 238);
+    doc.text('Church Planner - Analytics Report', margin, y);
+    y += 15;
+    // Date Range
+    const dateRange = document.getElementById('dateRange')?.value || '30';
+    doc.setFontSize(12);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Report Period: ${dateRange === 'all' ? 'All Time' : `Last ${dateRange} Days`}`, margin, y);
+    y += 15;
+    // Stats
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Dashboard Summary', margin, y);
+    y += 10;
+    doc.setFontSize(12);
+    const totalEvents = document.getElementById('totalEvents').textContent;
+    const totalAttendance = document.getElementById('totalAttendance').textContent;
+    const avgAttendance = document.getElementById('avgAttendance').textContent;
+    const avgDuration = document.getElementById('avgDuration').textContent;
+    doc.text(`Total Events: ${totalEvents}`, margin, y); y += 8;
+    doc.text(`Total Attendance: ${totalAttendance}`, margin, y); y += 8;
+    doc.text(`Average Attendance: ${avgAttendance}`, margin, y); y += 8;
+    doc.text(`Average Duration: ${avgDuration} min`, margin, y); y += 15;
+    // Add Charts
+    const chart1 = document.getElementById('attendanceChart');
+    const chart2 = document.getElementById('eventTypesChart');
+    const charts = [chart1, chart2];
+    for (const chart of charts) {
+      if (chart && y + 90 < 280) {
+        const imgData = chart.toDataURL('image/png', 1.0);
+        const imgWidth = pageWidth - 2 * margin;
+        const imgHeight = 80;
+        doc.addImage(imgData, 'PNG', margin, y, imgWidth, imgHeight);
+        y += imgHeight + 10;
+      } else {
+        doc.addPage();
+        y = 20;
+      }
+    }
+    // Save PDF
+    const filename = `church-analytics-report-${dateRange}-${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(filename);
+    showMessage('PDF exported successfully!', 'success');
+  } catch (error) {
+    console.error('PDF Export Error:', error);
+    showMessage(`PDF export failed: ${error.message}`, 'error');
+  }
+}
+        async function exportToExcel() {
+  try {
+    showMessage('Generating Excel file...', 'info');
+    const dateRange = document.getElementById('dateRange')?.value || '30';
+    const eventType = document.getElementById('eventTypeFilter')?.value || 'all';
+    const params = new URLSearchParams({ range: dateRange, type: eventType });
+    const response = await authFetch(`${API_BASE}/reports/export/events?${params}`);
+    // ✅ Check if response is OK
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`HTTP ${response.status}: ${text.substring(0, 100)}...`);
+    }
+    // ✅ Check content type before parsing
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      throw new Error(`Expected JSON, got ${contentType}: ${text.substring(0, 100)}...`);
+    }
+    const eventsData = await response.json();
+    if (eventsData.length === 0) {
+      showMessage('No event data to export', 'warning');
+      return;
+    }
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    // Add Events sheet
+    const ws = XLSX.utils.json_to_sheet(eventsData);
+    XLSX.utils.book_append_sheet(wb, ws, 'Events');
+    // Save file
+    const filename = `church-events-export-${dateRange}-${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    showMessage('Events exported to Excel successfully!', 'success');
+  } catch (error) {
+    console.error('Excel export error:', error);
+    showMessage(`Export failed: ${error.message}`, 'error');
+  }
+}
+        async function exportAttendanceToExcel() {
+  try {
+    const dateRange = document.getElementById('dateRange')?.value || '30';
+    const params = new URLSearchParams({ range: dateRange });
+    const response = await authFetch(`${API_BASE}/reports/export/attendance?${params}`);
+    const data = await response.json();
+    if (data.length === 0) {
+      showMessage('No attendance data to export', 'warning');
+      return;
+    }
+    const exportData = data.map(item => ({
+      'Event': item.event_title,
+      'Activity': item.activity_title,
+      'Date': item.event_date,
+      'Attendance': item.attendance_count,
+      'Recorded By': item.recorded_by,
+      'Recorded At': item.recorded_at
+    }));
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
+    const filename = `attendance-export-${dateRange}-${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    showMessage('Attendance exported to Excel!', 'success');
+  } catch (error) {
+    console.error('Attendance Export Error:', error);
+    showMessage(`Export failed: ${error.message}`, 'error');
+  }
+}
+    // Export to Excel
+async function exportOvertimeToExcel() {
+  try {
+    if (!overtimeData || overtimeData.length === 0) {
+      await loadOvertimeData(); // Load if not already loaded
+    }
+    if (overtimeData.length === 0) {
+      showMessage('No overtime data available to export', 'warning');
+      return;
+    }
+    const exportData = overtimeData.map(item => ({
+      'Activity': item.activity_title,
+      'Event': item.event_title,
+      'Date': item.event_date,
+      'Preacher': item.preacher,
+      'Scheduled (min)': item.scheduled_duration,
+      'Actual (min)': item.actual_duration,
+      'Delta (min)': item.duration_delta,
+      'Status': item.status
+    }));
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Overtime & Early Ends');
+    const range = document.getElementById('overtimeDateRange')?.value || '30';
+    const filename = `overtime-export-${range}-${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    showMessage('Overtime data exported to Excel!', 'success');
+  } catch (error) {
+    console.error('Overtime Excel Export Error:', error);
+    showMessage(`Export failed: ${error.message}`, 'error');
+  }
+}
+async function exportToPrintablePDF() {
+  try {
+    showMessage('Generating printable report...', 'info');
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4'); // portrait
+    const pageWidth = doc.internal.pageSize.width;
+    const margin = 15;
+    let y = 20;
+    // Title
+    doc.setFontSize(20);
+    doc.setTextColor(67, 97, 238);
+    doc.text('Overtime & Early Ends Report', margin, y);
+    y += 15;
+    // Date Range
+    const range = document.getElementById('overtimeDateRange')?.value || '30';
+    doc.setFontSize(12);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Report Period: ${range === 'all' ? 'All Time' : `Last ${range} Days`}`, margin, y);
+    y += 15;
+    // Stats - Only if elements exist
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Summary Statistics', margin, y);
+    y += 10;
+    const totalOvertimeEl = document.getElementById('totalOvertime');
+    const totalEarlyEl = document.getElementById('totalEarly');
+    const avgOvertimeEl = document.getElementById('avgOvertime');
+    const avgEarlyEl = document.getElementById('avgEarly');
+    doc.setFontSize(12);
+    if (totalOvertimeEl) {
+      doc.text(`Overtime Activities: ${totalOvertimeEl.textContent}`, margin, y); y += 8;
+    }
+    if (totalEarlyEl) {
+      doc.text(`Ended Early: ${totalEarlyEl.textContent}`, margin, y); y += 8;
+    }
+    if (avgOvertimeEl) {
+      doc.text(`Avg Overtime: ${avgOvertimeEl.textContent} min`, margin, y); y += 8;
+    }
+    if (avgEarlyEl) {
+      doc.text(`Avg Early: ${avgEarlyEl.textContent} min`, margin, y); y += 15;
+    } else {
+      y += 15;
+    }
+    // Add Chart (if it exists)
+    const chartCanvas = document.getElementById('preacherVarianceChart');
+    if (chartCanvas) {
+      const imgData = chartCanvas.toDataURL('image/png', 1.0);
+      const imgWidth = pageWidth - 2 * margin;
+      const imgHeight = (chartCanvas.height * imgWidth) / chartCanvas.width;
+      if (y + imgHeight > 280) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.addImage(imgData, 'PNG', margin, y, imgWidth, imgHeight);
+    }
+    // Add Table
+    const table = document.getElementById('overtimeTable');
+    if (!table) {
+      showMessage('No data to print', 'error');
+      return;
+    }
+    await html2canvas(table, {
+      backgroundColor: '#ffffff',
+      scale: 2,
+      useCORS: true
+    }).then(canvas => {
+      const imgData = canvas.toDataURL('image/png');
+      const imgWidth = pageWidth - 2 * margin;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      if (y + imgHeight > 280) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.addImage(imgData, 'PNG', margin, y, imgWidth, imgHeight);
+    });
+    // Save PDF
+    const filename = `overtime-report-printable-${range}-${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(filename);
+    showMessage('Printable report generated successfully!', 'success');
+  } catch (error) {
+    console.error('Print PDF error:', error);
+    showMessage(`Print export failed: ${error.message}`, 'error');
+  }
+}
+function setupFilterListeners() {
+  const dateRange = document.getElementById('dateRange');
+  const eventTypeFilter = document.getElementById('eventTypeFilter');
+  // ✅ Refresh when either filter changes
+  dateRange.addEventListener('change', refreshData);
+  eventTypeFilter.addEventListener('change', refreshData);
+}
+// Call this in DOMContentLoaded
+document.addEventListener('DOMContentLoaded', async () => {
+  // ... auth checks ...
+  setupTabs();
+  setupFilterListeners(); // ← Add this!
+  await initializeDashboard();
+});
+function showMessage(message, type = 'info') {
+    const msgDiv = document.getElementById('message');
+    if (!msgDiv) return;
+    msgDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+    setTimeout(hideMessage, 5000);
+}
+function hideMessage() {
+    const msgDiv = document.getElementById('message');
+    if (msgDiv) msgDiv.innerHTML = '';
+}
+function refreshData() {
+    loadDashboardData();
+}
+window.exportToPDF = exportToPDF;
+        window.exportToExcel = exportToExcel;
+        window.exportAttendanceToExcel = exportAttendanceToExcel;
+        window.loadOvertimeData = loadOvertimeData;
+        window.loadAttendanceData = loadAttendanceData;
+        async function saveAttendance(eventId) {
+    try {
+        const input = document.getElementById(`attendance-${eventId}`);
+        const count = parseInt(input.value, 10);
+        if (isNaN(count) || count < 0) {
+            showMessage('Please enter a valid attendance count.', 'error');
+            return;
+        }
+        const token = localStorage.getItem('accessToken');
+        const response = await fetch(`${API_BASE}/events/${eventId}/attendance`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ count })
+        });
+        const result = await response.json();
+        if (response.ok) {
+            showMessage(result.message || 'Attendance saved!', 'success');
+            // Optionally refresh attendance data to update status badge
+            await loadAttendanceData();
+        } else {
+            showMessage(result.error || 'Failed to save attendance.', 'error');
+        }
+    } catch (error) {
+        showMessage('Network error: ' + error.message, 'error');
+    }
+}
+// Make sure this is available globally for onclick in HTML
+window.saveAttendance = saveAttendance;
+</script>
+</body>
+</html>

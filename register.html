@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Church Planner</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .auth-container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .auth-container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .auth-btn {
+            width: 100%;
+            padding: 10px;
+            background: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .auth-btn:hover {
+            background: #0056b3;
+        }
+        .auth-links {
+            margin-top: 15px;
+            text-align: center;
+        }
+        .error-message {
+            color: #dc3545;
+            margin-top: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <h2>Register</h2>
+        <div id="errorMessage" class="error-message"></div>
+        <div class="form-group">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" placeholder="Enter your full name">
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="Enter your email">
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Enter your password">
+        </div>
+        <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input type="password" id="confirmPassword" placeholder="Confirm your password">
+        </div>
+        <button id="registerBtn" class="auth-btn">Register</button>
+        <div class="auth-links">
+            Already have an account? <a href="login.html">Login here</a>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        document.getElementById('registerBtn').addEventListener('click', async () => {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const errorElement = document.getElementById('errorMessage');
+
+            errorElement.textContent = '';
+
+            if (!name || !email || !password || !confirmPassword) {
+                errorElement.textContent = 'Please fill in all fields';
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                errorElement.textContent = 'Passwords do not match';
+                return;
+            }
+
+            if (password.length < 8) {
+                errorElement.textContent = 'Password must be at least 8 characters';
+                return;
+            }
+
+            try {
+                const response = await AuthService.register(email, password, name);
+                window.location.href = 'index.html';
+            } catch (error) {
+                errorElement.textContent = error.message;
+            }
+        });
+
+        // Allow registration on Enter key
+        document.getElementById('confirmPassword').addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('registerBtn').click();
+            }
+        });
+        
+            // Mobile menu toggle
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.getElementById('sidebar');
+            
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+            });
+
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth <= 768 && 
+                    !sidebar.contains(e.target) && 
+                    e.target !== menuToggle) {
+                    sidebar.classList.remove('active');
+                }
+            });
+    </script>
+</body>
+</html>

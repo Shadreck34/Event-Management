@@ -1,0 +1,7 @@
+Flask>=2.3.0
+Flask-MySQLdb>=1.0.0
+Flask-CORS>=4.0.0
+PyMySQL>=1.0.0
+mysqlclient>=2.0.0
+bcrypt>=4.0.0
+PyJWT>=2.0.0

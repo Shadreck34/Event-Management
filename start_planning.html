@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Start Planning - Church Planner</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="stylenew.css">
+</head>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check authentication
+        if (!AuthService.isAuthenticated()) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // Example: restrict to planners
+        if (!AuthService.hasRole('planner')) {
+            window.location.href = 'index.html';
+        }
+        // In DOMContentLoaded
+if (!AuthService.hasRole('admin')) {
+  document.getElementById('newEventType').closest('.form-group').style.opacity = '0.6';
+  document.getElementById('newEventType').closest('.form-group').insertAdjacentHTML(
+    'beforeend',
+    '<small style="color: #6c757d;">Only admins can create new types</small>'
+  );
+  document.querySelector('#newEventType + button').disabled = true;
+}
+
+        
+        // Logout button
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            AuthService.logout();
+        });
+    });
+</script>
+<body>
+  <div class="dashboard">
+    <!-- Mobile Menu Toggle -->
+    <button class="menu-toggle" id="menuToggle">
+      <i class="fas fa-bars"></i>
+    </button>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h2><i class="fas fa-clock"></i> Smart Clock</h2>
+    </div>
+    <div class="nav-menu">
+        <div class="nav-item">
+            <a href="index.html" class="nav-link">
+                <i class="fas fa-home"></i> Live Dashboard
+            </a>
+        </div>
+        <div class="nav-item">
+            <a href="start_planning.html" class="nav-link active">
+                <i class="fas fa-calendar-plus"></i> Schedule Event
+            </a>
+        </div>
+        <div class="nav-item">
+            <a href="view_plans.html" class="nav-link">
+                <i class="fas fa-calendar-alt"></i> View Events
+            </a>
+        </div>
+        <div class="nav-item">
+            <a href="reports.html" class="nav-link">
+                <i class="fas fa-chart-bar"></i> Analytics & Reports
+            </a>
+        </div>
+        <div class="nav-item">
+            <a href="admin.html" class="nav-link">
+                <i class="fas fa-users-cog"></i> Management Panel
+            </a>
+        </div>
+    </div>
+</div>
+    <!-- Main Content -->
+    <div class="main-content">
+      <div class="header">
+        <h1><i class="fas fa-calendar-plus"></i> Start Planning</h1>
+        <div class="user-info">
+          <div class="user-avatar" id="userAvatar">AD</div>
+          <button class="logout-btn" id="logoutBtn">
+            <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2><i class="fas fa-info-circle"></i> Event Details</h2>
+        </div>
+        <div id="message"></div>
+        <form id="eventForm" class="form-grid">
+          <div class="form-group">
+            <label for="eventTitle"><i class="fas fa-heading"></i> Event Title</label>
+            <input type="text" id="eventTitle" class="form-control" placeholder="e.g. Sunday Service - July 21" required>
+          </div>
+
+          <div class="form-group">
+            <label for="eventDate"><i class="fas fa-calendar-day"></i> Event Date</label>
+            <input type="date" id="eventDate" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label for="startTime"><i class="fas fa-clock"></i> Start Time</label>
+            <input type="time" id="startTime" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label for="endTime"><i class="fas fa-clock"></i> End Time</label>
+            <input type="time" id="endTime" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label for="location"><i class="fas fa-location-dot"></i> Location / Room</label>
+            <input type="text" id="location" class="form-control" placeholder="e.g. Main Hall, Room A" />
+          </div>
+
+          <div class="form-group">
+            <label for="eventType"><i class="fas fa-tag"></i> Event Type</label>
+            <select id="eventType" class="form-control" required>
+              <option value="">Select Event Type</option>
+            </select>
+            <div class="form-group" style="grid-column: 1 / -1; margin-top: 1rem;">
+              <label for="newEventType"><i class="fas fa-plus-circle"></i> Create New Event Type</label>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <input 
+                  type="text" 
+                  id="newEventType" 
+                  class="form-control" 
+                  placeholder="e.g. Men's Conference" 
+                  style="flex: 1;"
+                >
+                <button class="btn btn-success" onclick="createEventType()" style="white-space: nowrap;">
+                  <i class="fas fa-plus"></i> Add Type
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="templateSelect"><i class="fas fa-copy"></i> Load Bulletin Template (optional)</label>
+            <select id="templateSelect" class="form-control">
+              <option value="">No Template</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="recurrenceType"><i class="fas fa-redo"></i> Recurrence</label>
+            <select id="recurrenceType" class="form-control">
+              <option value="none">None</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="biweekly">Bi-weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="recurrenceEndGroup" style="display:none;">
+            <label for="recurrenceEndDate"><i class="fas fa-calendar-times"></i> Repeat Until</label>
+            <input type="date" id="recurrenceEndDate" class="form-control">
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <button type="button" class="btn btn-primary btn-block" onclick="handleCreateEvent()">
+              <i class="fas fa-calendar-plus"></i> Create Event
+            </button>
+          </div>
+        </form>
+        <button type="button" class="btn btn-info" onclick="previewRecurrence()">
+          <i class="fas fa-eye"></i> Preview Recurrence
+        </button>
+        <div id="recurrencePreview"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Conflict Modal -->
+  <div id="conflictModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Event Conflicts</h3>
+        <button class="modal-close" onclick="document.getElementById('conflictModal').style.display='none'">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div id="conflictDetails"></div>
+      <div class="conflict-options">
+        <button class="btn btn-danger" onclick="resolveConflict('keep_mine')">
+          <i class="fas fa-trash"></i> Keep My Event (Delete Conflicting)
+        </button>
+        <button class="btn" onclick="resolveConflict('keep_other')">
+          <i class="fas fa-ban"></i> Keep Conflicting Event (Cancel Mine)
+        </button>
+        <button class="btn" onclick="resolveConflict('change_mine')">
+          <i class="fas fa-edit"></i> Change My Event Time
+        </button>
+        <button class="btn" onclick="resolveConflict('change_other')">
+          <i class="fas fa-edit"></i> Change Conflicting Event Time
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    // Configuration
+    
+    let currentEventData = null;
+    let currentConflicts = null;
+
+    // Utility functions
+    function showMessage(message, type = 'success') {
+      const messageDiv = document.getElementById('message');
+      messageDiv.innerHTML = `
+        <div class="alert alert-${type}">
+          <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+          ${message}
+        </div>
+      `;
+      setTimeout(() => messageDiv.innerHTML = '', 5000);
+    }
+
+    function showError(message) {
+      showMessage(message, 'danger');
+    }
+
+    // API functions with error handling
+    async function apiCall(url, options = {}) {
+      try {
+        const response = await authFetch(url, {
+          headers:
+           {
+            'Content-Type': 'application/json',
+            ...options.headers
+          },
+          ...options
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || `HTTP ${response.status}`);
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error('API Error:', error);
+        if (error.message.includes('Token') || error.message.includes('auth')) {
+          window.location.href = 'login.html';
+        }
+        throw error;
+      }
+    }
+
+    async function loadEventTypes() {
+      try {
+        const types = await apiCall(`${API_BASE}/event_types`);
+        const select = document.getElementById("eventType");
+        select.innerHTML = '<option value="">Select Event Type</option>';
+        types.forEach(t => {
+          const opt = document.createElement("option");
+          opt.value = t.id;
+          opt.textContent = t.name;
+          select.appendChild(opt);
+        });
+      } catch (error) {
+        showError(`Failed to load event types: ${error.message}`);
+      }
+    }
+    async function createEventType() {
+  const input = document.getElementById('newEventType');
+  const name = input.value.trim();
+
+  if (!name) {
+    showError('Please enter a name for the new event type');
+    input.focus();
+    return;
+  }
+
+  if (name.length < 2 || name.length > 100) {
+    showError('Event type name must be between 2 and 100 characters');
+    input.focus();
+    return;
+  }
+
+  try {
+    // Show loading state
+    const button = input.nextElementSibling;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    button.disabled = true;
+
+    const response = await authFetch(`${API_BASE}/event_types`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create event type');
+    }
+
+    const result = await response.json();
+
+    // Clear input
+    input.value = '';
+
+    // Show success
+    showMessage(`Event type "${name}" created successfully!`);
+
+    // Refresh event types dropdown
+    await loadEventTypes();
+
+    // Optional: Select the new type
+    const eventTypeSelect = document.getElementById('eventType');
+    for (let i = 0; i < eventTypeSelect.options.length; i++) {
+      if (eventTypeSelect.options[i].textContent === name) {
+        eventTypeSelect.selectedIndex = i;
+        break;
+      }
+    }
+
+  } catch (error) {
+    console.error('Create event type error:', error);
+    
+    if (error.message.includes('Token')) {
+      window.location.href = 'login.html';
+    } else if (error.message.includes('403') || error.message.includes('permission')) {
+      showError('Only admins can create new event types');
+    } else if (error.message.includes('duplicate')) {
+      showError(`Event type "${name}" already exists`);
+    } else {
+      showError(`Create failed: ${error.message}`);
+    }
+  } finally {
+    // Restore button
+    const button = input.nextElementSibling;
+    button.innerHTML = '<i class="fas fa-plus"></i> Add Type';
+    button.disabled = false;
+  }
+}
+
+    async function loadTemplates() {
+      try {
+        const templates = await apiCall(`${API_BASE}/templates`);
+        const select = document.getElementById("templateSelect");
+        select.innerHTML = '<option value="">No Template</option>';
+        templates.forEach(t => {
+          const opt = document.createElement("option");
+          opt.value = t.id;
+          opt.textContent = t.name;
+          select.appendChild(opt);
+        });
+      } catch (error) {
+        showError(`Failed to load templates: ${error.message}`);
+      }
+    }
+
+    async function handleCreateEvent() {
+      const title = document.getElementById("eventTitle").value.trim();
+      const eventDate = document.getElementById("eventDate").value;
+      const startTime = document.getElementById("startTime").value;
+      const endTime = document.getElementById("endTime").value;
+      const eventTypeId = parseInt(document.getElementById("eventType").value);
+      const recurrenceType = document.getElementById('recurrenceType').value;
+      const recurrenceEndDate = document.getElementById('recurrenceEndDate').value || null;
+
+      if (!title) return showError("Please enter an event title");
+      if (!eventDate) return showError("Please select an event date");
+      if (!startTime) return showError("Please select a start time");
+      if (!endTime) return showError("Please select an end time");
+      if (startTime >= endTime) return showError("End time must be after start time");
+      if (!eventTypeId || isNaN(eventTypeId)) return showError("Please select a valid event type");
+
+      // Recurrence validation
+      if (recurrenceType !== 'none' && !recurrenceEndDate) {
+        return showError("Please select a repeat until date for recurring events");
+      }
+
+      currentEventData = {
+        title: title,
+        event_date: eventDate,
+        start_time: startTime,
+        end_time: endTime,
+        event_type_id: eventTypeId,
+        location: (document.getElementById('location')?.value || '').trim() || null,
+        recurrence_type: recurrenceType,
+        recurrence_end_date: recurrenceType !== 'none' ? recurrenceEndDate : null
+      };
+
+      try {
+        const response = await authFetch(`${API_BASE}/events`, {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(currentEventData)
+        });
+
+        const result = await response.json();
+
+        if (response.status === 409 && result.conflicts) {
+          showConflictOptions(result.conflicts);
+          return;
+        }
+
+        if (!response.ok || !result.base_event_id) {
+          const errMsg = result.error || "Failed to create event. No event ID returned.";
+          throw new Error(errMsg);
+        }
+        
+        const templateId = document.getElementById("templateSelect").value;
+        let url = `add_bulletin.html?event_id=${result.base_event_id}`;
+        if (templateId) url += `&template_id=${templateId}`;
+        window.location.href = url;
+      } catch (error) {
+        console.error("❌ Create Event Error:", error);
+        showError(`Failed to create event: ${error.message}`);
+        if (error.message.includes('Token') || error.message.includes('auth')) {
+          window.location.href = 'login.html';
+        }
+      }
+    }
+
+    function showConflictOptions(conflicts) {
+      currentConflicts = conflicts;
+      const modal = document.getElementById('conflictModal');
+      const conflictDetails = document.getElementById('conflictDetails');
+      
+      conflictDetails.innerHTML = `
+        <p>Your event conflicts with the following:</p>
+        <ul style="margin: 1rem 0; padding-left: 1.5rem;">
+          ${conflicts.map(c => `
+            <li>
+              <strong>${c.title}</strong> on ${c.event_date} from ${c.start_time} to ${c.end_time}
+            </li>
+          `).join('')}
+        </ul>
+        <p>Please choose how to resolve this conflict:</p>
+      `;
+      
+      modal.style.display = 'flex';
+    }
+
+    async function resolveConflict(option) {
+      const modal = document.getElementById('conflictModal');
+      
+      try {
+        switch(option) {
+          case 'keep_mine':
+            for (const conflict of currentConflicts) {
+              await apiCall(`${API_BASE}/events/${conflict.id}`, { method: "DELETE" });
+            }
+            modal.style.display = 'none';
+            handleCreateEvent(); // Retry creation
+            break;
+            
+          case 'keep_other':
+            modal.style.display = 'none';
+            showError("Your event was not created. Please choose a different time.");
+            break;
+            
+          case 'change_mine':
+            modal.style.display = 'none';
+            showMessage("Please adjust your event time and try again.", "danger");
+            document.getElementById('startTime').focus();
+            break;
+            
+          case 'change_other':
+            modal.style.display = 'none';
+            showMessage("Please edit the conflicting event from the View Plans page.", "danger");
+            break;
+        }
+      } catch (error) {
+        console.error('Conflict resolution error:', error);
+        showError(`Failed to resolve conflict: ${error.message}`);
+      }
+    }
+
+    async function previewRecurrence() {
+  const eventDate = document.getElementById("eventDate").value;
+  const recurrenceType = document.getElementById('recurrenceType').value;
+  const recurrenceEndDate = document.getElementById('recurrenceEndDate').value || null;
+
+  if (recurrenceType === 'none' || !eventDate || !recurrenceEndDate) {
+    document.getElementById('recurrencePreview').innerHTML = '';
+    return;
+  }
+
+  try {
+    const response = await authFetch(`${API_BASE}/events/preview-recurrence`, {
+      method: "POST",
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event_date: eventDate,
+        recurrence_type: recurrenceType,
+        recurrence_end_date: recurrenceEndDate
+      })
+    });
+    const result = await response.json();
+    if (result.preview && result.preview.length > 0) {
+      document.getElementById('recurrencePreview').innerHTML =
+        `<strong>Recurring Dates:</strong><ul>` +
+        result.preview.map(ev => `<li>${ev.event_date}</li>`).join('') +
+        `</ul>`;
+    } else {
+      document.getElementById('recurrencePreview').innerHTML = '<em>No recurrence dates generated.</em>';
+    }
+  } catch (error) {
+    document.getElementById('recurrencePreview').innerHTML = `<span style="color:red;">Preview failed: ${error.message}</span>`;
+  }
+}
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', () => {
+      // Check authentication and role
+      const user = AuthService.getCurrentUser();
+      if (!user) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      if (!AuthService.hasRole('planner')) {
+        showError("You don't have permission to create events");
+        window.location.href = 'index.html';
+        return;
+      }
+
+      // Display current user
+      document.getElementById('userAvatar').textContent = 
+        user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+      
+      // Set up logout button
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        AuthService.logout();
+      });
+
+      // Mobile menu toggle
+      const menuToggle = document.getElementById('menuToggle');
+      const sidebar = document.getElementById('sidebar');
+      
+      menuToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+      });
+
+      // Close sidebar when clicking outside on mobile
+      document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768 && 
+            !sidebar.contains(e.target) && 
+            e.target !== menuToggle) {
+          sidebar.classList.remove('active');
+        }
+      });
+
+      // Initialize form
+      loadEventTypes();
+      loadTemplates();
+
+      // Set default date to today
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('eventDate').value = today;
+
+      // Show/hide recurrence end date
+      document.getElementById('recurrenceType').addEventListener('change', function() {
+        document.getElementById('recurrenceEndGroup').style.display =
+          this.value === 'none' ? 'none' : 'block';
+      });
+    });
+
+    // Make functions available globally
+    window.handleCreateEvent = handleCreateEvent;
+    window.resolveConflict = resolveConflict;
+  </script>
+</body>
+</html>
