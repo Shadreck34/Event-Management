@@ -1312,55 +1312,84 @@
                 document.getElementById('message').style.color = '#fca5a5';
             }
         }
-        async function loadCurrentActivityForLocation(location) {
-            const statusEl = document.getElementById('status');
-            const messageEl = document.getElementById('message');
-            const activityDisplay = document.getElementById('activityDisplay');
-            const actionButtons = document.getElementById('actionButtons');
-            const locationDisplay = document.getElementById('selectedLocation');
-            try {
-                const token = localStorage.getItem('accessToken');
-                const url = location 
-                    ? `${API_BASE}/current_activity?location=${encodeURIComponent(location)}`
-                    : `${API_BASE}/current_activity`;
-                
-                const res = await fetch(url, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!res.ok) throw new Error('Failed to fetch activity');
-                const data = await res.json();
-                document.getElementById('activity').textContent = data.title || 'No activity';
-                document.getElementById('event').textContent = data.event_title || 'Unknown';
-                locationDisplay.textContent = data.location || location || 'Unassigned Room';
-                statusEl.textContent = data.bulletin_id ? 'Active' : 'Inactive';
-                statusEl.className = 'status';
-                
-                currentBulletinId = data.bulletin_id || null;
-                currentLocation = data.location || location || null;
-                // Show/hide UI elements based on data
-                activityDisplay.style.display = 'block';
-                if (currentBulletinId) {
-                    actionButtons.style.display = 'flex';
-                    messageEl.textContent = 'Ready to control.';
-                    messageEl.style.color = '#a7f3d0';
-                } else {
-                    actionButtons.style.display = 'none';
-                    messageEl.textContent = data.title.includes('Next:') ? 'Activity starting soon.' : 'No active activity.';
-                    messageEl.style.color = '#fca5a5';
-                }
-            } catch (err) {
-                console.error('Error loading activity for location:', err);
-                document.getElementById('activity').textContent = 'Error';
-                document.getElementById('event').textContent = 'Offline';
-                locationDisplay.textContent = location || 'Unknown';
-                statusEl.textContent = 'Offline';
-                statusEl.className = 'status offline';
-                activityDisplay.style.display = 'block';
-                actionButtons.style.display = 'none';
-                messageEl.textContent = 'Could not connect to server.';
-                messageEl.style.color = '#fca5a5';
-            }
+async function loadCurrentActivityForLocation(location) {
+    const statusEl = document.getElementById('status');
+    const messageEl = document.getElementById('message');
+    const activityDisplay = document.getElementById('activityDisplay');
+    const actionButtons = document.getElementById('actionButtons');
+    const locationDisplay = document.getElementById('selectedLocation');
+    const activityEl = document.getElementById('activity');
+    const eventEl = document.getElementById('event');
+
+    try {
+        const token = localStorage.getItem('accessToken');
+        const url = location 
+            ? `${API_BASE}/current_activity?location=${encodeURIComponent(location)}`
+            : `${API_BASE}/current_activity`;
+        const res = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch activity');
+        const data = await res.json();
+
+        // Set location
+        locationDisplay.textContent = data.location || location || 'Unassigned Room';
+        eventEl.textContent = data.event_title || 'Unknown';
+
+        // Determine if it's upcoming or current
+        let isUpcoming = false;
+        let cleanTitle = data.title || 'No activity';
+
+        if (data.title && data.title.startsWith("Next: ")) {
+            isUpcoming = true;
+            cleanTitle = data.title.replace("Next: ", "");
         }
+
+        // Display clean title
+        activityEl.textContent = cleanTitle;
+
+        // Set status and UI
+        if (isUpcoming) {
+            statusEl.textContent = 'Upcoming';
+            statusEl.className = 'status'; // remove offline class
+            currentBulletinId = null; // no active bulletin
+            actionButtons.style.display = 'none';
+            messageEl.textContent = 'Activity starting soon.';
+            messageEl.style.color = '#fbbf24'; // amber for upcoming
+        } else if (data.bulletin_id) {
+            // Truly active
+            statusEl.textContent = 'Active';
+            statusEl.className = 'status';
+            currentBulletinId = data.bulletin_id;
+            actionButtons.style.display = 'flex';
+            messageEl.textContent = 'Ready to control.';
+            messageEl.style.color = '#a7f3d0';
+        } else {
+            // No activity at all
+            statusEl.textContent = 'Inactive';
+            statusEl.className = 'status offline';
+            currentBulletinId = null;
+            actionButtons.style.display = 'none';
+            messageEl.textContent = 'No active or upcoming activity.';
+            messageEl.style.color = '#fca5a5';
+        }
+
+        activityDisplay.style.display = 'block';
+
+    } catch (err) {
+        console.error('Error loading activity for location:', err);
+        activityEl.textContent = 'Error';
+        eventEl.textContent = 'Offline';
+        locationDisplay.textContent = location || 'Unknown';
+        statusEl.textContent = 'Offline';
+        statusEl.className = 'status offline';
+        activityDisplay.style.display = 'block';
+        actionButtons.style.display = 'none';
+        messageEl.textContent = 'Could not connect to server.';
+        messageEl.style.color = '#fca5a5';
+        currentBulletinId = null;
+    }
+}
         function setupControlPanelListeners() {
             const locationSelector = document.getElementById('locationSelector');
             locationSelector.addEventListener('change', async function() {

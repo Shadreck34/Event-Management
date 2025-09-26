@@ -7,9 +7,8 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="stylesheet" href="stylenew.css">
+  <script src="auth.js"></script>
   <style>
-
-
     /* Room container styles */
     .room-container {
       margin: 20px auto;
@@ -21,7 +20,6 @@
       position: relative;
       transition: all 0.4s ease;
     }
-
     .room-header {
       display: flex;
       justify-content: space-between;
@@ -29,27 +27,23 @@
       gap: 8px;
       margin-bottom: 12px;
     }
-
     .room-name {
       margin: 0;
       font-size: 20px;
       font-weight: 600;
       color: #2c3e50;
     }
-
     .room-activity {
       margin: 8px 0 12px 0;
       font-size: 16px;
       font-weight: 500;
       color: #475569;
     }
-
     .room-content {
       display: flex;
       flex-direction: column;
       align-items: center;
     }
-
     .fs-btn {
       border: none;
       background: linear-gradient(135deg, #667eea, #764ba2);
@@ -61,12 +55,10 @@
       font-weight: 600;
       transition: all 0.3s ease;
     }
-
     .fs-btn:hover {
       transform: translateY(-1px);
       box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     }
-
     #fullscreenBtn {
       position: fixed;
       top: 24px;
@@ -85,12 +77,10 @@
       backdrop-filter: blur(10px);
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
-
     #fullscreenBtn:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
     }
-
     #activity {
       font-size: 24px;
       font-weight: 700;
@@ -103,7 +93,6 @@
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
-
     #clock, .room-clock {
       display: block;
       margin: 0 auto 32px auto;
@@ -115,7 +104,6 @@
       transition: all 0.4s ease;
       border: 8px solid rgba(255, 255, 255, 0.8);
     }
-
     #digitalClock, .room-digital {
       font-size: 32px;
       font-weight: 800;
@@ -129,7 +117,6 @@
       box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.6);
     }
-
     #countdown, .room-countdown {
       font-size: 18px;
       font-weight: 600;
@@ -141,13 +128,11 @@
       border: 1px solid rgba(34, 197, 94, 0.2);
       transition: all 0.3s ease; /* Smooth transition for updates */
     }
-
     .status-offline {
       background: linear-gradient(135deg, #fef2f2, #fee2e2) !important;
       color: #dc2626 !important;
       border-color: rgba(220, 38, 38, 0.2) !important;
     }
-
     /* FULLSCREEN STYLES FOR INDIVIDUAL ROOMS */
     .room-fullscreen-overlay {
       position: fixed;
@@ -167,12 +152,10 @@
       pointer-events: none;
       transition: opacity 0.3s ease;
     }
-    
     .room-fullscreen-overlay.active {
       opacity: 1;
       pointer-events: all;
     }
-    
     .room-fullscreen-content {
       width: 100%;
       max-width: 1200px;
@@ -186,7 +169,6 @@
       max-height: 100vh;
       overflow: hidden;
     }
-    
     .room-fullscreen-content .room-name {
       font-size: clamp(20px, 3.5vw, 28px) !important;
       color: white !important;
@@ -194,7 +176,6 @@
       line-height: 1.2;
       max-width: 90%;
     }
-
     .room-fullscreen-content .room-activity {
       font-size: clamp(24px, 4.5vw, 36px) !important;
       margin-bottom: 25px !important;
@@ -208,7 +189,6 @@
       max-width: 90%;
       font-weight: 700;
     }
-
     .room-fullscreen-content .room-clock {
       width: min(65vw, 55vh) !important;
       height: min(65vw, 55vh) !important;
@@ -219,7 +199,6 @@
         0 0 30px rgba(255, 255, 255, 0.2),
         inset 0 2px 15px rgba(0, 0, 0, 0.1) !important;
     }
-
     .room-fullscreen-content .room-digital {
       font-size: clamp(20px, 3.5vw, 32px) !important;
       padding: 15px 25px !important;
@@ -233,7 +212,6 @@
       line-height: 1.2;
       font-weight: 700;
     }
-
     .room-fullscreen-content .room-countdown {
       font-size: clamp(16px, 3vw, 24px) !important;
       padding: 12px 20px !important;
@@ -246,18 +224,15 @@
       font-weight: 600;
       transition: all 0.3s ease;
     }
-
     .room-fullscreen-content .room-countdown.status-offline {
       background: rgba(239, 68, 68, 0.9) !important;
       color: white !important;
       border-color: rgba(255, 255, 255, 0.3) !important;
     }
-
     /* Hide the fullscreen button inside the room when in fullscreen mode */
     .room-container.in-fullscreen-mode .fs-btn {
       display: none !important;
     }
-
     /* Exit fullscreen button style */
     .exit-fullscreen-btn {
       position: fixed;
@@ -275,50 +250,42 @@
       transition: all 0.3s ease;
       box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
     }
-    
     .exit-fullscreen-btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 30px rgba(239, 68, 68, 0.6);
     }
-
     /* Hide other elements when a room is in fullscreen */
     body.room-fullscreen-active .dashboard {
       visibility: hidden;
       opacity: 0;
       pointer-events: none;
     }
-
     body.room-fullscreen-active .menu-toggle {
       visibility: hidden;
       opacity: 0;
       pointer-events: none;
     }
-
     body.room-fullscreen-active #mainContainer {
       visibility: hidden;
       opacity: 0;
       pointer-events: none;
     }
-
     body.room-fullscreen-active #fullscreenBtn {
       visibility: hidden;
       opacity: 0;
       pointer-events: none;
     }
-
     body.room-fullscreen-active {
       overflow: hidden !important;
       background: transparent !important;
       padding: 0 !important;
     }
-
     /* Global fullscreen styles */
     body.fullscreen-mode {
       background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
       overflow: hidden;
       padding: 0;
     }
-
     .container.fullscreen-mode {
       position: fixed;
       top: 0;
@@ -341,7 +308,6 @@
       z-index: 999;
       overflow: hidden;
     }
-
     .fullscreen-mode #activity {
       font-size: clamp(36px, 5vw, 64px);
       margin-bottom: 40px;
@@ -352,7 +318,6 @@
       background-clip: text;
       text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
     }
-
     .fullscreen-mode #clock {
       width: min(60vw, 60vh);
       height: min(60vw, 60vh);
@@ -363,7 +328,6 @@
         0 0 60px rgba(255, 255, 255, 0.2),
         inset 0 2px 20px rgba(0, 0, 0, 0.1);
     }
-
     .fullscreen-mode #digitalClock {
       font-size: clamp(24px, 4vw, 56px);
       padding: 24px 40px;
@@ -374,7 +338,6 @@
       letter-spacing: 5px;
       min-width: 300px;
     }
-
     .fullscreen-mode #countdown {
       font-size: clamp(18px, 3vw, 30px);
       padding: 20px 32px;
@@ -383,19 +346,16 @@
       border: 2px solid rgba(255, 255, 255, 0.3);
       min-width: 300px;
     }
-
     .fullscreen-mode .status-offline {
       background: rgba(239, 68, 68, 0.9) !important;
       color: white !important;
       border-color: rgba(255, 255, 255, 0.3) !important;
     }
-
     /* Mobile responsiveness */
     @media (max-width: 768px) {
       .dashboard {
         flex-direction: column;
       }
-      
       .sidebar {
         position: fixed;
         left: -300px;
@@ -407,105 +367,86 @@
         margin: 0;
         border-radius: 0 20px 20px 0;
       }
-      
       .sidebar.active {
         left: 0;
       }
-      
       .menu-toggle {
         display: block;
       }
-      
       .main-content {
         width: 100%;
         padding-top: 60px;
       }
-
       .container, .room-container {
         margin: 20px;
         padding: 24px 20px;
         max-width: calc(100vw - 40px);
       }
-
       #fullscreenBtn {
         top: 16px;
         right: 16px;
         padding: 10px 16px;
         font-size: 12px;
       }
-
       #activity {
         font-size: 20px;
         margin-bottom: 24px;
       }
-
       #clock, .room-clock {
         width: 240px;
         height: 240px;
         border-width: 6px;
       }
-
       #digitalClock, .room-digital {
         font-size: 24px;
         padding: 12px 16px;
         letter-spacing: 2px;
       }
-
       #countdown, .room-countdown {
         font-size: 16px;
         padding: 12px 16px;
       }
-
       .room-fullscreen-content .room-clock {
         width: min(80vw, 50vh) !important;
         height: min(80vw, 50vh) !important;
         border-width: 8px;
       }
-
       .room-fullscreen-content .room-digital {
         min-width: 240px;
         letter-spacing: 3px;
         font-size: clamp(18px, 5vw, 28px) !important;
       }
-
       .room-fullscreen-content .room-countdown {
         min-width: 200px;
         font-size: clamp(14px, 4vw, 20px) !important;
       }
-      
       .room-fullscreen-content .room-name {
         font-size: clamp(18px, 4vw, 24px) !important;
         margin-bottom: 12px !important;
       }
-      
       .room-fullscreen-content .room-activity {
         font-size: clamp(20px, 5vw, 30px) !important;
         margin-bottom: 20px !important;
       }
     }
-
     @media (max-width: 480px) {
       .room-fullscreen-content {
         padding: 10px;
       }
-      
       .room-fullscreen-content .room-name {
         font-size: clamp(16px, 4vw, 20px) !important;
         margin-bottom: 10px !important;
       }
-      
       .room-fullscreen-content .room-activity {
         font-size: clamp(18px, 6vw, 26px) !important;
         margin-bottom: 18px !important;
       }
-      
       .room-fullscreen-content .room-clock {
         width: min(90vw, 45vh) !important;
         height: min(90vw, 45vh) !important;
         margin: 12px auto 20px auto !important;
         border-width: 6px;
       }
-
       .room-fullscreen-content .room-digital {
         min-width: 200px;
         font-size: clamp(16px, 6vw, 24px) !important;
@@ -513,7 +454,6 @@
         letter-spacing: 2px !important;
         margin: 8px auto 12px auto !important;
       }
-
       .room-fullscreen-content .room-countdown {
         min-width: 180px;
         font-size: clamp(14px, 5vw, 18px) !important;
@@ -521,7 +461,6 @@
         margin: 8px auto 10px auto !important;
       }
     }
-
     /* Animations */
     @keyframes fadeInUp {
       from {
@@ -533,46 +472,48 @@
         transform: translateY(0);
       }
     }
-
     .container > *, .room-container > * {
       animation: fadeInUp 0.6s ease-out;
     }
-
     .container > *:nth-child(2), .room-container > *:nth-child(2) { animation-delay: 0.1s; }
     .container > *:nth-child(3), .room-container > *:nth-child(3) { animation-delay: 0.2s; }
     .container > *:nth-child(4), .room-container > *:nth-child(4) { animation-delay: 0.3s; }
     .container > *:nth-child(5), .room-container > *:nth-child(5) { animation-delay: 0.4s; }
-
     /* Clock pulse animation */
     #clock, .room-clock {
       animation: clockPulse 4s ease-in-out infinite;
     }
-
     @keyframes clockPulse {
       0%, 100% { transform: scale(1); }
       50% { transform: scale(1.02); }
     }
-
     .fullscreen-mode #clock,
     .room-fullscreen-content .room-clock {
       animation: clockPulseFullscreen 6s ease-in-out infinite;
     }
-
     @keyframes clockPulseFullscreen {
       0%, 100% { transform: scale(1); }
       50% { transform: scale(1.01); }
     }
-
     @keyframes blinking {
       0%, 50% { opacity: 1; }
       51%, 100% { opacity: 0.3; }
     }
-
     .no-events {
       text-align: center;
       color: #64748b;
       font-style: italic;
       padding: 20px;
+    }
+    /* New styles for upcoming activity */
+    .upcoming-activity {
+      color: #64748b !important;
+      font-style: italic;
+    }
+    .upcoming-countdown {
+      background: linear-gradient(135deg, #f0f9ff, #e0f2fe) !important;
+      border-color: rgba(59, 130, 246, 0.2) !important;
+      color: #1d4ed8 !important;
     }
   </style>
 </head>
@@ -586,13 +527,11 @@
       <i class="fas fa-times"></i> Exit Fullscreen
     </button>
   </div>
-
   <div class="dashboard">
     <!-- Mobile Menu Toggle -->
     <button class="menu-toggle" id="menuToggle">
       <i class="fas fa-bars"></i>
     </button>
-
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
       <div class="sidebar-header">
@@ -626,7 +565,6 @@
         </div>
       </div>
     </div>
-
     <!-- Main Content -->
     <div class="main-content">
       <div class="header">
@@ -638,39 +576,31 @@
           </button>
         </div>
       </div>
-
       <button id="fullscreenBtn" class="always-allowed" onclick="toggleFullscreen()">⛶ Fullscreen</button>
       <div class="container" id="mainContainer">
         <h1 id="activity">Activity: --</h1>
-        
         <!-- Overtime Warning Indicator -->
         <div id="overtime-indicator" style="display: none; background-color: red; color: white; font-weight: bold; padding: 10px; margin: 10px 0; border-radius: 8px;">
           OVERTIME
         </div>
-        
         <div id="rooms"></div>
       </div>
     </div>
   </div>
-
   <script>
     let isFullscreen = false;
     let currentRoomFullscreen = null;
     let clockIntervals = new Map(); // Track intervals for each clock
     let originalCanvasData = new Map(); // Store original canvas data
     let originalRoomData = new Map(); // Store original room data for restoration
-
     // Function to properly resize and redraw a canvas
     function resizeAndRedrawCanvas(canvas, newSize) {
       if (!canvas) return;
-      
       const canvasId = canvas.id;
-      
       // Clear any existing interval for this canvas
       if (clockIntervals.has(canvasId)) {
         clearInterval(clockIntervals.get(canvasId));
       }
-      
       // Store original dimensions if not already stored
       if (!originalCanvasData.has(canvasId)) {
         originalCanvasData.set(canvasId, {
@@ -678,43 +608,35 @@
           height: canvas.height
         });
       }
-      
       // Set new size
       canvas.width = newSize;
       canvas.height = newSize;
-      
       // Force immediate redraw
       const ctx = canvas.getContext('2d');
       const radius = newSize / 2;
       drawClockFace(ctx, canvas, radius);
-      
       // Set up interval for continuous updates
       const interval = setInterval(() => {
         drawClockFace(ctx, canvas, radius);
       }, 1000);
-      
       clockIntervals.set(canvasId, interval);
     }
-
     // Global fullscreen toggle for the main container
     function toggleFullscreen() {
       const body = document.body;
       const container = document.getElementById('mainContainer');
       const canvas = document.getElementById('clock');
       const btn = document.getElementById('fullscreenBtn');
-
       if (!isFullscreen) {
         isFullscreen = true;
         body.classList.add('fullscreen-mode');
         container.classList.add('fullscreen-mode');
         btn.textContent = '⌌ Exit Fullscreen';
-
         // Resize canvas for fullscreen
         if (canvas) {
           const size = Math.min(window.innerWidth * 0.6, window.innerHeight * 0.6);
           resizeAndRedrawCanvas(canvas, size);
         }
-
         // Try to enter browser fullscreen
         if (document.documentElement.requestFullscreen) {
           document.documentElement.requestFullscreen().catch(() => {});
@@ -723,69 +645,54 @@
         exitFullscreenMode();
       }
     }
-
     // Calculate optimal size for fullscreen clock to fit without scrolling
     function calculateOptimalClockSize() {
       // Get viewport dimensions
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
-      
       // Calculate available space considering padding and text elements
       // Reserve 30% of height for text elements (name, activity, digital clock, countdown)
       const availableHeight = viewportHeight * 0.7;
-      
       // Calculate size based on available space
       let size = Math.min(viewportWidth * 0.65, availableHeight);
-      
       // Ensure it's not too large
       size = Math.min(size, 600);
-      
       // Ensure it's not too small
       size = Math.max(size, 200);
-      
       return size;
     }
-
     // Individual room fullscreen toggle - FIXED VERSION (Move elements instead of cloning)
     function toggleRoomFullscreen(roomId) {
       const roomElement = document.getElementById(roomId);
       if (!roomElement) return;
-
       const overlay = document.getElementById('roomFullscreenOverlay');
       const content = document.getElementById('roomFullscreenContent');
       const exitBtn = document.getElementById('roomExitBtn');
-      
       // If we're already in fullscreen for this room, exit
       if (currentRoomFullscreen === roomId && overlay.classList.contains('active')) {
         exitRoomFullscreen();
         return;
       }
-      
       // If another room is in fullscreen, exit it first
       if (currentRoomFullscreen && currentRoomFullscreen !== roomId) {
         exitRoomFullscreen();
       }
-      
       // Store original parent and next sibling for restoration
       originalRoomData.set(roomId, {
         parent: roomElement.parentNode,
         nextSibling: roomElement.nextSibling,
         originalButton: roomElement.querySelector('.fs-btn').cloneNode(true)
       });
-      
       // Hide the fullscreen button inside the room container
       const roomButton = roomElement.querySelector('.fs-btn');
       if (roomButton) {
         roomButton.style.display = 'none';
       }
-      
       // Add class to hide the button via CSS
       roomElement.classList.add('in-fullscreen-mode');
-      
       // Move the entire room element to the fullscreen overlay
       content.innerHTML = ''; // Clear previous content
       content.appendChild(roomElement);
-      
       // Apply fullscreen styling to the room container
       roomElement.style.position = 'relative';
       roomElement.style.width = '100%';
@@ -795,30 +702,25 @@
       roomElement.style.background = 'transparent';
       roomElement.style.border = 'none';
       roomElement.style.boxShadow = 'none';
-      
       // Update styles for fullscreen
       const roomName = roomElement.querySelector('.room-name');
       const roomActivity = roomElement.querySelector('.room-activity');
       const canvas = roomElement.querySelector('canvas');
       const digitalClock = roomElement.querySelector('.room-digital');
       const countdown = roomElement.querySelector('.room-countdown');
-      
       if (roomName) roomName.classList.add('fullscreen-room-name');
       if (roomActivity) roomActivity.classList.add('fullscreen-room-activity');
       if (digitalClock) digitalClock.classList.add('fullscreen-room-digital');
       if (countdown) countdown.classList.add('fullscreen-room-countdown');
-      
       // Resize canvas for fullscreen
       if (canvas) {
         const optimalSize = calculateOptimalClockSize();
         resizeAndRedrawCanvas(canvas, optimalSize);
       }
-      
       // Enter fullscreen
       overlay.classList.add('active');
       document.body.classList.add('room-fullscreen-active');
       currentRoomFullscreen = roomId;
-      
       // Try to enter browser fullscreen
       if (document.documentElement.requestFullscreen) {
         document.documentElement.requestFullscreen().catch(() => {
@@ -826,29 +728,22 @@
         });
       }
     }
-
     // Exit room fullscreen mode
     function exitRoomFullscreen() {
       if (!currentRoomFullscreen) return;
-      
       const roomId = currentRoomFullscreen;
       const roomElement = document.getElementById(roomId);
       const overlay = document.getElementById('roomFullscreenOverlay');
-      
       if (!roomElement) return;
-      
       // Get original data
       const originalData = originalRoomData.get(roomId);
-      
       // Show the fullscreen button inside the room container again
       const roomButton = roomElement.querySelector('.fs-btn');
       if (roomButton) {
         roomButton.style.display = '';
       }
-      
       // Remove the in-fullscreen-mode class
       roomElement.classList.remove('in-fullscreen-mode');
-      
       // Remove fullscreen styling
       roomElement.style.position = '';
       roomElement.style.width = '';
@@ -858,18 +753,15 @@
       roomElement.style.background = '';
       roomElement.style.border = '';
       roomElement.style.boxShadow = '';
-      
       // Remove fullscreen classes
       const roomName = roomElement.querySelector('.room-name');
       const roomActivity = roomElement.querySelector('.room-activity');
       const digitalClock = roomElement.querySelector('.room-digital');
       const countdown = roomElement.querySelector('.room-countdown');
-      
       if (roomName) roomName.classList.remove('fullscreen-room-name');
       if (roomActivity) roomActivity.classList.remove('fullscreen-room-activity');
       if (digitalClock) digitalClock.classList.remove('fullscreen-room-digital');
       if (countdown) countdown.classList.remove('fullscreen-room-countdown');
-      
       // Move room element back to its original position
       if (originalData && originalData.parent) {
         if (originalData.nextSibling) {
@@ -878,7 +770,6 @@
           originalData.parent.appendChild(roomElement);
         }
       }
-      
       // Reset canvas size
       const canvas = roomElement.querySelector('canvas');
       if (canvas) {
@@ -890,31 +781,26 @@
           resizeAndRedrawCanvas(canvas, 300);
         }
       }
-      
       // Exit fullscreen
       overlay.classList.remove('active');
       document.body.classList.remove('room-fullscreen-active');
       currentRoomFullscreen = null;
       originalRoomData.delete(roomId);
-      
       // Exit browser fullscreen
       if (document.exitFullscreen) {
         document.exitFullscreen().catch(() => {});
       }
     }
-
     // Exit fullscreen mode for main container
     function exitFullscreenMode() {
       const body = document.body;
       const container = document.getElementById('mainContainer');
       const canvas = document.getElementById('clock');
       const btn = document.getElementById('fullscreenBtn');
-
       isFullscreen = false;
       body.classList.remove('fullscreen-mode');
       container.classList.remove('fullscreen-mode');
       btn.textContent = '⛶ Fullscreen';
-
       // Reset canvas size
       if (canvas) {
         if (originalCanvasData.has('clock')) {
@@ -924,12 +810,10 @@
           resizeAndRedrawCanvas(canvas, 300);
         }
       }
-
       if (document.exitFullscreen) {
         document.exitFullscreen().catch(() => {});
       }
     }
-
     // Handle browser fullscreen changes
     document.addEventListener('fullscreenchange', () => {
       if (!document.fullscreenElement) {
@@ -942,7 +826,6 @@
         }
       }
     });
-
     // Handle escape key
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
@@ -953,7 +836,6 @@
         }
       }
     });
-
     // Handle window resize
     window.addEventListener('resize', () => {
       if (isFullscreen) {
@@ -963,7 +845,6 @@
           resizeAndRedrawCanvas(canvas, size);
         }
       }
-      
       // Handle room fullscreen resize
       if (currentRoomFullscreen) {
         const roomElement = document.getElementById(currentRoomFullscreen);
@@ -976,14 +857,12 @@
         }
       }
     });
-
     // Setup exit button for room fullscreen
     document.getElementById('roomExitBtn').addEventListener('click', () => {
       if (currentRoomFullscreen) {
         exitRoomFullscreen();
       }
     });
-
     function updateDigitalClock() {
       const now = new Date();
       const timeString = now.toLocaleTimeString('en-US', { 
@@ -992,91 +871,72 @@
         minute: '2-digit',
         second: '2-digit'
       });
-      
       // Update main digital clock
       const mainDigital = document.getElementById('digitalClock');
       if (mainDigital) mainDigital.textContent = timeString;
-      
       // Update all room digital clocks
       document.querySelectorAll('.room-digital').forEach(el => {
         el.textContent = timeString;
       });
     }
-
     function drawClockFace(ctx, canvas, radius) {
       try {
         // Clear the entire canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
         // Save the context state
         ctx.save();
-        
         // Move to center
         ctx.translate(radius, radius);
-        
         // Adjust radius for border
         const actualRadius = radius - 20;
-        
         // Draw the outer circle with gradient
         const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, actualRadius);
         gradient.addColorStop(0, '#ffffff');
         gradient.addColorStop(0.7, '#f8fafc');
         gradient.addColorStop(1, '#e2e8f0');
-        
         ctx.beginPath();
         ctx.arc(0, 0, actualRadius, 0, 2 * Math.PI);
         ctx.fillStyle = gradient;
         ctx.fill();
-        
         // Border
         ctx.strokeStyle = '#cbd5e1';
         ctx.lineWidth = 3;
         ctx.stroke();
-        
         // Inner decorative circles
         ctx.beginPath();
         ctx.arc(0, 0, actualRadius - 15, 0, 2 * Math.PI);
         ctx.strokeStyle = '#e2e8f0';
         ctx.lineWidth = 1;
         ctx.stroke();
-        
         // Draw numbers
         drawNumbers(ctx, actualRadius);
-        
         // Draw hour markers
         drawMarkers(ctx, actualRadius);
-        
         // Draw hands
         drawTime(ctx, actualRadius);
-        
         // Draw center dot with gradient
         const centerGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 8);
         centerGradient.addColorStop(0, '#667eea');
         centerGradient.addColorStop(1, '#764ba2');
-        
         ctx.beginPath();
         ctx.arc(0, 0, 8, 0, 2 * Math.PI);
         ctx.fillStyle = centerGradient;
         ctx.fill();
-        
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 2;
         ctx.stroke();
-        
         // Restore the context state
         ctx.restore();
       } catch (error) {
         console.error('Error drawing clock:', error);
       }
     }
-
     function drawNumbers(ctx, radius) {
       const fontSize = Math.max(16, radius / 8);
       ctx.font = `bold ${fontSize}px 'Segoe UI', Arial, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#1e293b';
-      
       for (let num = 1; num <= 12; num++) {
         const angle = (num - 3) * (Math.PI / 6);
         const x = Math.cos(angle) * (radius - 35);
@@ -1084,7 +944,6 @@
         ctx.fillText(num.toString(), x, y);
       }
     }
-
     function drawMarkers(ctx, radius) {
       // Hour markers
       ctx.strokeStyle = '#475569';
@@ -1099,7 +958,6 @@
         ctx.stroke();
         ctx.restore();
       }
-      
       // Minute markers
       ctx.strokeStyle = '#94a3b8';
       for (let i = 0; i < 60; i++) {
@@ -1116,46 +974,37 @@
         }
       }
     }
-
     function drawTime(ctx, radius) {
       const now = new Date();
       const hour = now.getHours() % 12;
       const minute = now.getMinutes();
       const second = now.getSeconds();
-
       // Hour hand
       const hourAngle = (hour + minute / 60) * Math.PI / 6 - Math.PI / 2;
       drawHand(ctx, hourAngle, radius * 0.5, Math.max(8, radius / 20), '#1e293b');
-
       // Minute hand
       const minAngle = (minute + second / 60) * Math.PI / 30 - Math.PI / 2;
       drawHand(ctx, minAngle, radius * 0.75, Math.max(6, radius / 25), '#475569');
-
       // Second hand
       const secAngle = second * Math.PI / 30 - Math.PI / 2;
       drawHand(ctx, secAngle, radius * 0.85, Math.max(2, radius / 60), '#ef4444');
     }
-
     function drawHand(ctx, angle, length, width, color) {
       ctx.save();
       ctx.strokeStyle = color;
       ctx.lineWidth = width;
       ctx.lineCap = 'round';
-      
       // Add shadow for depth
       ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
       ctx.shadowBlur = 2;
       ctx.shadowOffsetX = 1;
       ctx.shadowOffsetY = 1;
-      
       ctx.beginPath();
       ctx.moveTo(0, 0);
       ctx.lineTo(Math.cos(angle) * length, Math.sin(angle) * length);
       ctx.stroke();
-      
       ctx.restore();
     }
-
     function updateActivity() {
       fetch('http://127.0.0.1:5000/current_activity_by_location')
         .then(res => {
@@ -1166,15 +1015,12 @@
         })
         .then(data => {
           const roomsContainer = document.getElementById('rooms');
-          
           // Clear existing no-events message
           const existingNoEvents = roomsContainer.querySelector('.no-events');
           if (existingNoEvents) {
             existingNoEvents.remove();
           }
-
           const entries = Object.entries(data);
-          
           if (entries.length === 0) {
             const note = document.createElement('div');
             note.className = 'no-events';
@@ -1182,7 +1028,6 @@
             roomsContainer.appendChild(note);
             return;
           }
-
           const seen = new Set();
           entries.forEach(([location, item], idx) => {
             const roomId = `room-${idx}`;
@@ -1190,7 +1035,6 @@
             const digitalId = `${roomId}-digital`;
             const countdownId = `${roomId}-countdown`;
             seen.add(roomId);
-
             let card = document.getElementById(roomId);
             if (!card) {
               card = document.createElement('div');
@@ -1205,11 +1049,10 @@
                 <div class="room-content">
                   <canvas class="room-clock" id="${canvasId}" width="300" height="300"></canvas>
                   <div class="room-digital" id="${digitalId}">--:--:--</div>
-                  <div class="room-countdown" id="${countdownId}" data-end="">Countdown: --</div>
+                  <div class="room-countdown" id="${countdownId}" data-start="" data-end="">Countdown: --</div>
                 </div>
               `;
               roomsContainer.appendChild(card);
-              
               // Initialize the clock immediately
               setTimeout(() => {
                 const canvas = document.getElementById(canvasId);
@@ -1219,32 +1062,74 @@
                     width: canvas.width,
                     height: canvas.height
                   });
-                  
                   const ctx = canvas.getContext('2d');
                   const radius = canvas.width / 2;
-                  
                   // Draw the clock face immediately
                   drawClockFace(ctx, canvas, radius);
-                  
                   // Set up interval for continuous updates
                   const interval = setInterval(() => {
                     drawClockFace(ctx, canvas, radius);
                   }, 1000);
-                  
                   clockIntervals.set(canvas.id, interval);
                 }
               }, 100);
             }
-
             const nameEl = card.querySelector('.room-name');
             const actEl = card.querySelector('.room-activity');
             const countdownEl = document.getElementById(countdownId);
-            
             if (nameEl) nameEl.textContent = location || 'Unassigned Room';
-            if (actEl) actEl.textContent = `${item.title} (${item.event_title})`;
-            if (countdownEl) countdownEl.setAttribute('data-end', item.end_time || '');
+            
+            // Check if this is a current activity or upcoming activity
+            const now = new Date();
+            const today = now.toDateString();
+            
+            // Parse start and end times
+            let startDt, endDt;
+            if (item.start_time && item.end_time) {
+              startDt = new Date(today + ' ' + item.start_time);
+              endDt = new Date(today + ' ' + item.end_time);
+            }
+            
+            // Determine if activity is current, upcoming, or completed
+            let isCurrent = false;
+            let isUpcoming = false;
+            let isCompleted = false;
+            
+            if (startDt && endDt) {
+              if (now >= startDt && now <= endDt) {
+                isCurrent = true;
+              } else if (now < startDt) {
+                isUpcoming = true;
+              } else {
+                isCompleted = true;
+              }
+            }
+            
+            // Set the activity text and styling based on status
+            if (isCurrent) {
+              actEl.textContent = `${item.title} (${item.event_title})`;
+              actEl.className = 'room-activity';
+              actEl.classList.remove('upcoming-activity');
+            } else if (isUpcoming) {
+              actEl.textContent = `Next: ${item.title} (${item.event_title})`;
+              actEl.className = 'room-activity upcoming-activity';
+            } else if (isCompleted) {
+              actEl.textContent = `Completed: ${item.title} (${item.event_title})`;
+              actEl.className = 'room-activity';
+              actEl.classList.remove('upcoming-activity');
+            } else {
+              actEl.textContent = `${item.title} (${item.event_title})`;
+              actEl.className = 'room-activity';
+              actEl.classList.remove('upcoming-activity');
+            }
+            
+            // Set data attributes for countdown calculation
+            if (countdownEl) {
+              countdownEl.setAttribute('data-start', item.start_time || '');
+              countdownEl.setAttribute('data-end', item.end_time || '');
+              countdownEl.setAttribute('data-status', isCurrent ? 'current' : isUpcoming ? 'upcoming' : 'completed');
+            }
           });
-
           // Remove any rooms that are no longer active
           const allRooms = roomsContainer.querySelectorAll('.room-container');
           allRooms.forEach(room => {
@@ -1254,7 +1139,6 @@
               if (canvas && clockIntervals.has(canvas.id)) {
                 clearInterval(clockIntervals.get(canvas.id));
                 clockIntervals.delete(canvas.id);
-                
                 // Remove from original data store
                 originalCanvasData.delete(canvas.id);
               }
@@ -1271,58 +1155,88 @@
           }
         });
     }
-
     // Update digital clocks and countdowns every second
     function startDigitalUpdates() {
       setInterval(() => {
         updateDigitalClock();
-        
         // Update countdowns
         const now = new Date();
+        const today = now.toDateString();
         document.querySelectorAll('.room-countdown').forEach(el => {
+          const start = el.getAttribute('data-start');
           const end = el.getAttribute('data-end');
-          if (!end) { 
+          const status = el.getAttribute('data-status');
+          
+          if (!start || !end) { 
             el.textContent = 'Countdown: --'; 
             return; 
           }
-          const endDt = new Date(now.toDateString() + ' ' + end);
-          const diff = Math.floor((endDt - now) / 1000);
           
-          if (diff > 0) {
-            const hours = Math.floor(diff / 3600);
-            const mins = Math.floor((diff % 3600) / 60);
-            const secs = diff % 60;
-            
-            // Apply blinking animation if less than 3 minutes remain
-            if (diff <= 180) { // 3 minutes = 180 seconds
-              el.style.animation = 'blinking 1s infinite';
+          const startDt = new Date(today + ' ' + start);
+          const endDt = new Date(today + ' ' + end);
+          const diffToStart = Math.floor((startDt - now) / 1000);
+          const diffToEnd = Math.floor((endDt - now) / 1000);
+          
+          if (status === 'upcoming') {
+            // Show countdown to start time
+            if (diffToStart > 0) {
+              const hours = Math.floor(diffToStart / 3600);
+              const mins = Math.floor((diffToStart % 3600) / 60);
+              const secs = diffToStart % 60;
+              // Apply blinking animation if less than 3 minutes remain
+              if (diffToStart <= 180) { // 3 minutes = 180 seconds
+                el.style.animation = 'blinking 1s infinite';
+              } else {
+                el.style.animation = 'none';
+              }
+              el.textContent = hours > 0 ? `Starts in: ${hours}h ${mins}m ${secs}s` : `Starts in: ${mins}m ${secs}s`;
+              el.classList.add('upcoming-countdown');
+              el.classList.remove('status-offline');
             } else {
+              // Should be current now, but we'll handle this in the next update
+              el.textContent = 'Starting now...';
+              el.classList.add('upcoming-countdown');
               el.style.animation = 'none';
             }
-            
-            el.textContent = hours > 0 ? `Ends in: ${hours}h ${mins}m ${secs}s` : `Ends in: ${mins}m ${secs}s`;
+          } else if (status === 'current') {
+            // Show countdown to end time
+            if (diffToEnd > 0) {
+              const hours = Math.floor(diffToEnd / 3600);
+              const mins = Math.floor((diffToEnd % 3600) / 60);
+              const secs = diffToEnd % 60;
+              // Apply blinking animation if less than 3 minutes remain
+              if (diffToEnd <= 180) { // 3 minutes = 180 seconds
+                el.style.animation = 'blinking 1s infinite';
+              } else {
+                el.style.animation = 'none';
+              }
+              el.textContent = hours > 0 ? `Ends in: ${hours}h ${mins}m ${secs}s` : `Ends in: ${mins}m ${secs}s`;
+              el.classList.remove('upcoming-countdown');
+              el.classList.remove('status-offline');
+            } else {
+              const overtime = Math.abs(diffToEnd);
+              const m = Math.floor(overtime / 60);
+              const s = overtime % 60;
+              el.textContent = `Overtime: ${m}m ${s}s`;
+              el.classList.add('status-offline');
+              el.style.animation = 'none';
+            }
+          } else if (status === 'completed') {
+            el.textContent = 'Activity completed';
+            el.classList.remove('upcoming-countdown');
             el.classList.remove('status-offline');
-          } else {
-            const overtime = Math.abs(diff);
-            const m = Math.floor(overtime / 60);
-            const s = overtime % 60;
-            el.textContent = `Overtime: ${m}m ${s}s`;
-            el.classList.add('status-offline');
             el.style.animation = 'none';
           }
         });
       }, 1000);
     }
-
     // Sidebar toggle functionality
     const menuToggle = document.getElementById('menuToggle');
     const sidebar = document.getElementById('sidebar');
-    
     if (menuToggle && sidebar) {
       menuToggle.addEventListener('click', () => {
         sidebar.classList.toggle('active');
       });
-
       // Close sidebar when clicking outside on mobile
       document.addEventListener('click', (e) => {
         if (window.innerWidth <= 768 && 
@@ -1332,43 +1246,35 @@
         }
       });
     }
-
     // Listen for real-time updates
     function setupEventStream() {
       const eventSource = new EventSource('http://127.0.0.1:5000/stream');
-
       eventSource.onmessage = function(event) {
         console.log('Update received:', event.data);
         updateActivity(); // Force refresh current activity
       };
-
       eventSource.onerror = function(err) {
         console.error('SSE Error:', err);
         setTimeout(setupEventStream, 5000);
         eventSource.close();
       };
     }
-
     // Initialize everything when page loads
     document.addEventListener('DOMContentLoaded', () => {
       // Initialize the activity updates
       updateActivity();
       setInterval(updateActivity, 5000);
-      
       // Start digital clock updates
       startDigitalUpdates();
-      
       // Start listening for real-time updates
       setupEventStream();
     });
-
     // Clean up intervals when page unloads
     window.addEventListener('beforeunload', () => {
       clockIntervals.forEach(interval => clearInterval(interval));
       clockIntervals.clear();
     });
   </script>
-
   <style>
     /* Additional fullscreen styles for moved elements */
     .fullscreen-room-name {
@@ -1377,7 +1283,6 @@
       margin-bottom: 15px !important;
       line-height: 1.2;
     }
-
     .fullscreen-room-activity {
       font-size: clamp(24px, 4.5vw, 36px) !important;
       margin-bottom: 25px !important;
@@ -1390,7 +1295,6 @@
       line-height: 1.2;
       font-weight: 700;
     }
-
     .room-container.fullscreen-mode .room-clock,
     .fullscreen-room-clock {
       width: min(65vw, 55vh) !important;
@@ -1402,7 +1306,6 @@
         0 0 30px rgba(255, 255, 255, 0.2),
         inset 0 2px 15px rgba(0, 0, 0, 0.1) !important;
     }
-
     .fullscreen-room-digital {
       font-size: clamp(20px, 3.5vw, 32px) !important;
       padding: 15px 25px !important;
@@ -1415,7 +1318,6 @@
       line-height: 1.2;
       font-weight: 700;
     }
-
     .fullscreen-room-countdown {
       font-size: clamp(16px, 3vw, 24px) !important;
       padding: 12px 20px !important;
