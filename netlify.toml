@@ -1,0 +1,13 @@
+[build]
+  publish = "dist"
+  command = "powershell -ExecutionPolicy Bypass -File scripts/build_frontend.ps1"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://example-backend-url.com/:splat"
+  status = 200
+  force = true
+
+# Notes:
+# - Replace the redirect `to` with your actual backend URL if you have one hosted.
+# - Netlify will perform this redirect as a client-side rewrite; for true proxying you may need Netlify Functions.

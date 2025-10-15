@@ -1135,8 +1135,31 @@
                                 <label for="dateFilter">Date</label>
                                 <input type="date" id="dateFilter">
                             </div>
+                            <!-- MONTH FILTER ADDED -->
+                            <div class="filter-group">
+                                <label for="monthFilter">Month</label>
+                                <select id="monthFilter">
+                                    <option value="">All Months</option>
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
                             <button class="refresh-btn" id="refreshBtn">
                                 <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                            <!-- DOWNLOAD BUTTON ADDED -->
+                            <button class="refresh-btn" id="downloadBtn">
+                                <i class="fas fa-download"></i> Download Logs
                             </button>
                         </div>
                         <div class="log-list" id="logList">
@@ -1148,35 +1171,16 @@
                     </div>
                     <!-- Control Panel Tab -->
                     <div class="tab-content" id="control-panel-tab">
-    <div class="container" style="max-width:800px;margin:40px auto;">
+    <div class="container" style="max-width:1000px;margin:40px auto;">
         <h1><i class="fas fa-cogs"></i> Worship Control Panel</h1>
-        
-        <!-- Location Selector -->
-        <div style="margin-bottom: 20px; text-align: left;">
-            <label for="locationSelector" style="font-weight: 600; display: block; margin-bottom: 8px;">
-                <i class="fas fa-map-marker-alt"></i> Select Location
+        <div id="multiLocationPanel">
+            <label for="roomSelector" style="font-weight:600;display:block;margin-bottom:8px;">
+                <i class="fas fa-map-marker-alt"></i> Select Active Room
             </label>
-            <select id="locationSelector" class="form-control" style="max-width: 300px; margin: 0 auto;">
-                <option value="">Loading locations...</option>
-            </select>
+            <select id="roomSelector" class="form-control" style="max-width:300px;margin-bottom:24px;"></select>
+            <div id="roomActivityContainer"></div>
+            <p id="multiLocationMessage">Loading activities...</p>
         </div>
-
-        <!-- Activity Display -->
-        <div class="activity-display" id="activityDisplay" style="display: none;">
-            <p><strong>Location:</strong> <span id="selectedLocation">--</span></p>
-            <p><strong>Current Activity:</strong> <span id="activity">Loading...</span></p>
-            <p><strong>Event:</strong> <span id="event">--</span></p>
-            <p><strong>Status:</strong> <span id="status">Waiting...</span></p>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="btn-group" id="actionButtons" style="display: none;">
-            <button id="extendBtn"><i class="fas fa-plus"></i> Extend</button>
-            <button id="endBtn"><i class="fas fa-stop"></i> End</button>
-        </div>
-
-        <!-- Status Message -->
-        <p class="status" id="message">Select a location to begin.</p>
     </div>
 </div>
                 </div>
@@ -1242,10 +1246,10 @@
         let editTemplateId = null;
         let currentPage = 1;
         let totalPages = 1;
-        // --- Control Panel Tab Logic (Location-Aware) ---
-        let currentBulletinId = null;
-        let currentLocation = null;
-        let isReady = false;
+        let allLogs = []; // Store all logs for client-side filtering
+    // --- Control Panel Tab Logic (Multi-Location) ---
+    let isReady = false;
+    let locationActivities = {};
         async function apiFetch(url, options = {}) {
             const token = localStorage.getItem('accessToken');
             if (!token) {
@@ -1274,7 +1278,9 @@
             return response;
         }
         async function loadLocations() {
-            const locationSelector = document.getElementById('locationSelector');
+            const roomSelector = document.getElementById('roomSelector');
+            const activityContainer = document.getElementById('roomActivityContainer');
+            const message = document.getElementById('multiLocationMessage');
             try {
                 const token = localStorage.getItem('accessToken');
                 const res = await fetch(`${API_BASE}/current_activity_by_location`, {
@@ -1282,34 +1288,115 @@
                 });
                 if (!res.ok) throw new Error('Failed to fetch locations');
                 const locationData = await res.json();
+                locationActivities = locationData;
                 const locations = Object.keys(locationData);
-                locationSelector.innerHTML = '';
+                roomSelector.innerHTML = '';
+                activityContainer.innerHTML = '';
                 if (locations.length === 0) {
-                    locationSelector.innerHTML = '<option value="">No active locations</option>';
-                    document.getElementById('activityDisplay').style.display = 'none';
-                    document.getElementById('actionButtons').style.display = 'none';
-                    document.getElementById('message').textContent = 'No events scheduled for today.';
-                    document.getElementById('message').style.color = '#fca5a5';
+                    message.textContent = 'No events scheduled for today.';
+                    message.style.color = '#fca5a5';
                     return;
                 }
-                // Add "All Locations" or a default option
-                locationSelector.innerHTML = '<option value="">-- Select a Location --</option>';
+                message.textContent = '';
+                // Populate dropdown
+                roomSelector.innerHTML = '<option value="">-- Select a Room --</option>';
                 locations.forEach(loc => {
                     const option = document.createElement('option');
                     option.value = loc;
                     option.textContent = loc;
-                    locationSelector.appendChild(option);
+                    roomSelector.appendChild(option);
                 });
-                // Auto-select the first location if only one exists
-                if (locations.length === 1) {
-                    locationSelector.value = locations[0];
-                    await loadCurrentActivityForLocation(locations[0]);
+                // Show activity for selected room
+                roomSelector.onchange = function() {
+                    const selected = this.value;
+                    activityContainer.innerHTML = '';
+                    if (!selected) return;
+                    const activity = locationActivities[selected];
+                    if (!activity) return;
+                    const card = document.createElement('div');
+                    card.className = 'activity-display';
+                    card.style.background = '#fff';
+                    card.style.borderRadius = '16px';
+                    card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.07)';
+                    card.style.padding = '1.5rem';
+                    card.style.marginBottom = '1rem';
+                    card.innerHTML = `
+                        <p><strong>Location:</strong> <span>${selected}</span></p>
+                        <p><strong>Current Activity:</strong> <span>${activity.title || 'No activity'}</span></p>
+                        <p><strong>Event:</strong> <span>${activity.event_title || '--'}</span></p>
+                        <p><strong>Status:</strong> <span class="${activity.title && activity.title.startsWith('Next:') ? 'status' : (activity.title === 'No activity' ? 'status offline' : 'status')}">
+                            ${activity.title && activity.title.startsWith('Next:') ? 'Upcoming' : (activity.title === 'No activity' ? 'Inactive' : 'Active')}
+                        </span></p>
+                        <div class="btn-group">
+                            <button class="btn btn-primary" onclick="extendActivity('${selected}')" ${activity.title === 'No activity' ? 'disabled' : ''}><i class="fas fa-plus"></i> Extend</button>
+                            <button class="btn btn-danger" onclick="endActivity('${selected}')" ${activity.title === 'No activity' ? 'disabled' : ''}><i class="fas fa-stop"></i> End</button>
+                        </div>
+                        <p class="status" id="message-${selected}"></p>
+                    `;
+                    activityContainer.appendChild(card);
+                };
+            } catch (err) {
+                activityContainer.innerHTML = '';
+                message.textContent = 'Could not load locations.';
+                message.style.color = '#fca5a5';
+            }
+        }
+
+        // Multi-location control handlers
+        async function extendActivity(location) {
+            const activity = locationActivities[location];
+            if (!activity || activity.title === 'No activity') return alert('No active activity to extend.');
+            const mins = prompt('Minutes to extend:', '5');
+            if (!mins || isNaN(mins) || mins <= 0) return;
+            await executeActionMulti('extend', location, { minutes: parseInt(mins) });
+        }
+
+        async function endActivity(location) {
+            const activity = locationActivities[location];
+            if (!activity || activity.title === 'No activity') return alert('No active activity to end.');
+            if (!confirm('End this activity now?')) return;
+            await executeActionMulti('end', location);
+        }
+
+        async function executeActionMulti(action, location, data = {}) {
+            const activity = locationActivities[location];
+            const messageEl = document.getElementById(`message-${location}`);
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                messageEl.textContent = 'Authentication error: No token found. Please log in again.';
+                messageEl.style.color = '#fca5a5';
+                window.location.href = 'login.html';
+                return;
+            }
+            try {
+                // You may need to fetch bulletin_id for this location from the backend if not present
+                const bulletinId = activity.bulletin_id;
+                if (!bulletinId) {
+                    messageEl.textContent = 'No active bulletin for this location.';
+                    messageEl.style.color = '#fca5a5';
+                    return;
+                }
+                const res = await fetch(`${API_BASE}/bulletins/${bulletinId}/action`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ action, ...data })
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    messageEl.textContent = result.message || `Action '${action}' successful.`;
+                    messageEl.style.color = '#a7f3d0';
+                    // Refresh activities after action
+                    setTimeout(loadLocations, 1200);
+                } else {
+                    messageEl.textContent = 'Action failed: ' + (result.error || 'Unknown error');
+                    messageEl.style.color = '#fca5a5';
                 }
             } catch (err) {
-                console.error('Error loading locations:', err);
-                locationSelector.innerHTML = '<option value="">Error loading</option>';
-                document.getElementById('message').textContent = 'Could not load locations.';
-                document.getElementById('message').style.color = '#fca5a5';
+                messageEl.textContent = 'Network error: ' + err.message;
+                messageEl.style.color = '#fca5a5';
             }
         }
 async function loadCurrentActivityForLocation(location) {
@@ -1320,7 +1407,6 @@ async function loadCurrentActivityForLocation(location) {
     const locationDisplay = document.getElementById('selectedLocation');
     const activityEl = document.getElementById('activity');
     const eventEl = document.getElementById('event');
-
     try {
         const token = localStorage.getItem('accessToken');
         const url = location 
@@ -1331,23 +1417,18 @@ async function loadCurrentActivityForLocation(location) {
         });
         if (!res.ok) throw new Error('Failed to fetch activity');
         const data = await res.json();
-
         // Set location
         locationDisplay.textContent = data.location || location || 'Unassigned Room';
         eventEl.textContent = data.event_title || 'Unknown';
-
         // Determine if it's upcoming or current
         let isUpcoming = false;
         let cleanTitle = data.title || 'No activity';
-
         if (data.title && data.title.startsWith("Next: ")) {
             isUpcoming = true;
             cleanTitle = data.title.replace("Next: ", "");
         }
-
         // Display clean title
         activityEl.textContent = cleanTitle;
-
         // Set status and UI
         if (isUpcoming) {
             statusEl.textContent = 'Upcoming';
@@ -1373,9 +1454,7 @@ async function loadCurrentActivityForLocation(location) {
             messageEl.textContent = 'No active or upcoming activity.';
             messageEl.style.color = '#fca5a5';
         }
-
         activityDisplay.style.display = 'block';
-
     } catch (err) {
         console.error('Error loading activity for location:', err);
         activityEl.textContent = 'Error';
@@ -1440,35 +1519,15 @@ async function loadCurrentActivityForLocation(location) {
                     },
                     body: JSON.stringify({ action, ...data })
                 });
-                if (res.status === 401) {
-                    messageEl.textContent = 'Session expired. Please log in again.';
-                    messageEl.style.color = '#fca5a5';
-                    localStorage.removeItem('accessToken');
-                    setTimeout(() => window.location.href = 'login.html', 2000);
-                    return;
-                }
                 const result = await res.json();
                 if (res.ok) {
                     messageEl.textContent = result.message || `Action '${action}' successful.`;
                     messageEl.style.color = '#a7f3d0';
-                    
+                    // If action is 'end', refresh activity after a short delay
                     if (action === 'end') {
-                        if (result.next_activity) {
-                            messageEl.textContent += " Preparing next activity...";
-                            setTimeout(() => {
-                                document.getElementById('activity').textContent = result.next_activity.title;
-                                document.getElementById('status').textContent = 'Starting Soon';
-                                document.getElementById('status').className = 'status';
-                                currentBulletinId = result.next_activity.bulletin_id;
-                                setTimeout(() => {
-                                    document.getElementById('message').textContent = 'Ready to control.';
-                                    document.getElementById('status').textContent = 'Active';
-                                }, 2000);
-                            }, 15000);
-                        } else {
-                            // After ending, refresh the activity for the current location
-                            setTimeout(() => loadCurrentActivityForLocation(currentLocation), 1500);
-                        }
+                        setTimeout(() => {
+                            loadCurrentActivityForLocation(currentLocation);
+                        }, 1500);
                     } else {
                         // For 'extend', just refresh the current activity to show updated times
                         loadCurrentActivityForLocation(currentLocation);
@@ -1482,20 +1541,610 @@ async function loadCurrentActivityForLocation(location) {
                 messageEl.style.color = '#fca5a5';
             }
         }
+        // Helper: Get month from timestamp (1-12)
+        function getMonthFromTimestamp(timestamp) {
+            return new Date(timestamp).getMonth() + 1;
+        }
+        // Helper: Convert logs to CSV
+        function logsToCSV(logs) {
+            const headers = ['Timestamp', 'User', 'Email', 'Action', 'Entity', 'Description', 'IP Address'];
+            const rows = logs.map(log => {
+                const description = getActionDescription(log);
+                return [
+                    `"${new Date(log.timestamp).toLocaleString()}"`,
+                    `"${log.user_name || 'Unknown'}"`,
+                    `"${log.user_email || ''}"`,
+                    `"${log.action_type}"`,
+                    `"${log.entity_type}"`,
+                    `"${description.replace(/"/g, '""')}"`,
+                    `"${log.ip_address || ''}"`
+                ].join(',');
+            });
+            return [headers.join(','), ...rows].join('\n');
+        }
+        // Download logs as CSV (CLIENT-SIDE)
+        function downloadLogs() {
+            try {
+                // Apply current filters to allLogs
+                const filteredLogs = applyFilters(allLogs);
+                if (filteredLogs.length === 0) {
+                    showMessage('No logs to download with current filters', 'error');
+                    return;
+                }
+                const csvContent = logsToCSV(filteredLogs);
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Download error:', error);
+                showMessage('Download failed: ' + error.message, 'error');
+            }
+        }
+        // Apply filters client-side
+        function applyFilters(logs) {
+            const entityFilter = document.getElementById('entityFilter').value;
+            const actionFilter = document.getElementById('actionFilter').value;
+            const dateFilter = document.getElementById('dateFilter').value;
+            const monthFilter = document.getElementById('monthFilter').value;
+            return logs.filter(log => {
+                if (entityFilter !== 'ALL' && log.entity_type !== entityFilter) return false;
+                if (actionFilter !== 'ALL' && log.action_type !== actionFilter) return false;
+                if (dateFilter) {
+                    const logDate = new Date(log.timestamp).toISOString().split('T')[0];
+                    if (logDate !== dateFilter) return false;
+                }
+                if (monthFilter) {
+                    const logMonth = getMonthFromTimestamp(log.timestamp);
+                    if (logMonth !== parseInt(monthFilter)) return false;
+                }
+                return true;
+            });
+        }
+        // Load logs (fetch all, then paginate client-side)
+        async function loadLogs(page = 1) {
+            currentPage = page;
+            try {
+                const token = AuthService.getToken();
+                if (!token) throw new Error('No access token found');
+                // Fetch ALL logs (with high limit to get everything)
+                const response = await fetch(`${API_BASE}/audit-logs?limit=1000`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(error.error || 'Failed to fetch logs');
+                }
+                const data = await response.json();
+                allLogs = data.logs || [];
+                // Apply filters and paginate client-side
+                const filteredLogs = applyFilters(allLogs);
+                const pageSize = 20;
+                const totalPages = Math.ceil(filteredLogs.length / pageSize);
+                const startIndex = (page - 1) * pageSize;
+                const paginatedLogs = filteredLogs.slice(startIndex, startIndex + pageSize);
+                renderLogs(paginatedLogs);
+                renderPagination({ total_pages: totalPages, current_page: page });
+            } catch (error) {
+                console.error('Error loading logs:', error);
+                document.getElementById('logList').innerHTML = `
+                    <div style="color: red; padding: 20px; text-align: center;">
+                        Error loading logs: ${error.message}
+                    </div>
+                `;
+                document.getElementById('pagination').innerHTML = '';
+            }
+        }
+        // Render pagination (updated for client-side)
+        function renderPagination(data) {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            totalPages = data.total_pages;
+            // Previous button
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'pagination-btn';
+            prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.addEventListener('click', () => loadLogs(currentPage - 1));
+            pagination.appendChild(prevBtn);
+            // Page numbers
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
+                pageBtn.textContent = i;
+                pageBtn.addEventListener('click', () => loadLogs(i));
+                pagination.appendChild(pageBtn);
+            }
+            // Next button
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'pagination-btn';
+            nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.addEventListener('click', () => loadLogs(currentPage + 1));
+            pagination.appendChild(nextBtn);
+        }
+        // Audit Logs Functions (rendering remains the same)
+        function renderLogs(logs) {
+            const logList = document.getElementById('logList');
+            logList.innerHTML = '';
+            if (logs.length === 0) {
+                logList.innerHTML = '<div style="text-align: center; color: #64748b; padding: 40px;">No activity logs found for the selected filters.</div>';
+                return;
+            }
+            logs.forEach(log => {
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry ${log.action_type}`;
+                const timeDisplay = formatLogTimestamp(log.timestamp);
+                const description = getActionDescription(log);
+                const actionIcon = getActionIcon(log.action_type);
+                logEntry.innerHTML = `
+                    <div class="log-header">
+                        <div class="log-user-info">
+                            <div class="user-avatar-small">${(log.user_name || log.user_email).charAt(0).toUpperCase()}</div>
+                            <div>
+                                <div class="log-user">${log.user_name || 'Unknown User'}</div>
+                                <div class="log-user-email">${log.user_email}</div>
+                            </div>
+                        </div>
+                        <div class="log-time-container">
+                            <div class="log-time">${timeDisplay}</div>
+                            <span class="log-action ${log.action_type}">
+                                ${actionIcon} ${getActionText(log.action_type)}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="log-description">
+                        ${description}
+                    </div>
+                    ${getDetailsSummary(log)}
+                    <div class="log-expandable">
+                        <span class="expand-text">Click to view detailed information</span>
+                        <i class="fas fa-chevron-right expand-icon"></i>
+                    </div>
+                `;
+                logEntry.addEventListener('click', () => showLogDetails(log));
+                logList.appendChild(logEntry);
+            });
+        }
+        // ... [ALL EXISTING HELPER FUNCTIONS FOR LOGS REMAIN UNCHANGED] ...
+        function getActionIcon(actionType) {
+            const icons = {
+                'CREATE': '<i class="fas fa-plus-circle"></i>',
+                'EDIT': '<i class="fas fa-edit"></i>',
+                'DELETE': '<i class="fas fa-trash-alt"></i>',
+                'VIEW': '<i class="fas fa-eye"></i>'
+            };
+            return icons[actionType] || '<i class="fas fa-question-circle"></i>';
+        }
+        function getActionText(actionType) {
+            const texts = {
+                'CREATE': 'Created',
+                'EDIT': 'Modified',
+                'DELETE': 'Deleted',
+                'VIEW': 'Viewed'
+            };
+            return texts[actionType] || actionType;
+        }
+        function getActionDescription(log) {
+            const entityMap = {
+                'EVENT': 'service event',
+                'BULLETIN': 'service program item',
+                'TEMPLATE': 'service template'
+            };
+            const entityName = entityMap[log.entity_type] || log.entity_type.toLowerCase();
+            const action = getActionText(log.action_type).toLowerCase();
+            let itemName = '';
+            if (log.new_data && log.new_data.title) {
+                itemName = `"${log.new_data.title}"`;
+            } else if (log.old_data && log.old_data.title) {
+                itemName = `"${log.old_data.title}"`;
+            } else if (log.new_data && log.new_data.name) {
+                itemName = `"${log.new_data.name}"`;
+            } else if (log.old_data && log.old_data.name) {
+                itemName = `"${log.old_data.name}"`;
+            } else {
+                itemName = `#${log.entity_id}`;
+            }
+            if (log.action_type === 'EDIT' && log.old_data && log.new_data) {
+                if (log.old_data.start_time !== log.new_data.start_time || 
+                    log.old_data.end_time !== log.new_data.end_time) {
+                    const oldTime = log.old_data.start_time ? formatTimeForDisplay(log.old_data.start_time) : 'Not set';
+                    const newTime = log.new_data.start_time ? formatTimeForDisplay(log.new_data.start_time) : 'Not set';
+                    return `${getActionText(log.action_type)} ${entityName} ${itemName} (time changed from ${oldTime} to ${newTime})`;
+                }
+                if (log.old_data.event_date !== log.new_data.event_date) {
+                    const oldDate = log.old_data.event_date ? formatDateForDisplay(log.old_data.event_date) : 'Not set';
+                    const newDate = log.new_data.event_date ? formatDateForDisplay(log.new_data.event_date) : 'Not set';
+                    return `${getActionText(log.action_type)} ${entityName} ${itemName} (date changed from ${oldDate} to ${newDate})`;
+                }
+            }
+            return `${getActionText(log.action_type)} ${entityName} ${itemName}`;
+        }
+        function getDetailsSummary(log) {
+            if (!log.old_data && !log.new_data) {
+                return '';
+            }
+            if (log.action_type === 'CREATE' && log.new_data) {
+                const summary = getCreateSummary(log.new_data, log.entity_type);
+                if (summary) {
+                    return `
+                        <div class="log-summary">
+                            <div class="summary-title">Details:</div>
+                            <div class="summary-content">${summary}</div>
+                        </div>
+                    `;
+                }
+            }
+            if (log.action_type === 'EDIT' && log.old_data && log.new_data) {
+                const changes = getChanges(log.old_data, log.new_data, log.entity_type);
+                if (changes.length > 0) {
+                    return `
+                        <div class="log-summary">
+                            <div class="summary-title">Changes made:</div>
+                            <div class="summary-content">
+                                ${changes.map(change => `<div class="change-item">${change}</div>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            if (log.action_type === 'DELETE' && log.old_data) {
+                const summary = getDeleteSummary(log.old_data, log.entity_type);
+                if (summary) {
+                    return `
+                        <div class="log-summary">
+                            <div class="summary-title">What was deleted:</div>
+                            <div class="summary-content">${summary}</div>
+                        </div>
+                    `;
+                }
+            }
+            return '';
+        }
+        function getCreateSummary(data, entityType) {
+            if (entityType === 'EVENT') {
+                return `Service scheduled for ${data.event_date} at ${data.start_time}`;
+            }
+            if (entityType === 'TEMPLATE') {
+                const bulletinCount = data.bulletins ? data.bulletins.length : 0;
+                return `Template with ${bulletinCount} program items`;
+            }
+            return '';
+        }
+        function getDeleteSummary(data, entityType) {
+            if (entityType === 'EVENT') {
+                return `Service that was scheduled for ${data.event_date || 'unknown date'}`;
+            }
+            if (entityType === 'TEMPLATE') {
+                return `Template that contained service program items`;
+            }
+            return '';
+        }
+        function getChanges(oldData, newData, entityType) {
+            const changes = [];
+            const fieldNames = {
+                'title': 'Title',
+                'event_date': 'Date',
+                'start_time': 'Start Time',
+                'end_time': 'End Time',
+                'name': 'Name',
+                'description': 'Description',
+                'event_type_id': 'Event Type'
+            };
+            Object.keys(fieldNames).forEach(field => {
+                if (oldData[field] !== newData[field]) {
+                    const fieldName = fieldNames[field];
+                    if (field === 'start_time' || field === 'end_time') {
+                        const oldValue = formatTimeForDisplay(oldData[field]) || 'Not set';
+                        const newValue = formatTimeForDisplay(newData[field]) || 'Not set';
+                        changes.push(`${fieldName} changed from ${oldValue} to ${newValue}`);
+                    }
+                    else if (field === 'event_date') {
+                        const oldValue = formatDateForDisplay(oldData[field]) || 'Not set';
+                        const newValue = formatDateForDisplay(newData[field]) || 'Not set';
+                        changes.push(`${fieldName} changed from ${oldValue} to ${newValue}`);
+                    }
+                    else {
+                        const oldValue = oldData[field] || 'Not set';
+                        const newValue = newData[field] || 'Not set';
+                        changes.push(`${fieldName} changed from "${oldValue}" to "${newValue}"`);
+                    }
+                }
+            });
+            if (entityType === 'EVENT' || entityType === 'TEMPLATE') {
+                const oldBulletins = oldData.bulletins || [];
+                const newBulletins = newData.bulletins || [];
+                if (oldBulletins.length !== newBulletins.length) {
+                    changes.push(`Program items changed from ${oldBulletins.length} to ${newBulletins.length} items`);
+                } else if (oldBulletins.length > 0) {
+                    const bulletinChanges = compareBulletins(oldBulletins, newBulletins);
+                    changes.push(...bulletinChanges);
+                }
+            }
+            return changes;
+        }
+        function compareBulletins(oldBulletins, newBulletins) {
+            const changes = [];
+            oldBulletins.forEach((oldBulletin, index) => {
+                const newBulletin = newBulletins[index];
+                if (!newBulletin) return;
+                if (oldBulletin.title !== newBulletin.title) {
+                    changes.push(`Program item ${index + 1} title changed from "${oldBulletin.title}" to "${newBulletin.title}"`);
+                }
+                if (oldBulletin.duration_minutes !== newBulletin.duration_minutes) {
+                    changes.push(`Program item ${index + 1} duration changed from ${oldBulletin.duration_minutes} min to ${newBulletin.duration_minutes} min`);
+                }
+                if (oldBulletin.preacher !== newBulletin.preacher) {
+                    changes.push(`Program item ${index + 1} preacher changed from "${oldBulletin.preacher || 'Not set'}" to "${newBulletin.preacher || 'Not set'}"`);
+                }
+            });
+            return changes;
+        }
+        function showLogDetails(log) {
+            const modalOverlay = document.createElement('div');
+            modalOverlay.className = 'modal-overlay';
+            const timestamp = new Date(log.timestamp);
+            const formattedTime = timestamp.toLocaleString();
+            const description = getActionDescription(log);
+            const actionIcon = getActionIcon(log.action_type);
+            modalOverlay.innerHTML = `
+                <div class="audit-modal-content">
+                    <div class="audit-modal-header">
+                        <h3><i class="fas fa-info-circle"></i> Activity Details</h3>
+                        <button class="modal-close" onclick="closeAuditModal()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="audit-modal-body">
+                        <div class="detail-section">
+                            <h4>Action Summary</h4>
+                            <div class="detail-card">
+                                <div class="detail-row">
+                                    <span class="detail-label">Action:</span>
+                                    <span class="log-action ${log.action_type}">
+                                        ${actionIcon} ${getActionText(log.action_type)}
+                                    </span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Description:</span>
+                                    <span>${description}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">When:</span>
+                                    <span>${formattedTime}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Who:</span>
+                                    <span>${log.user_name || 'Unknown User'} (${log.user_email})</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">From IP:</span>
+                                    <span>${log.ip_address || 'Unknown'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        ${getDetailedChanges(log)}
+                        ${getDetailedData(log)}
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modalOverlay);
+            modalOverlay.addEventListener('click', (e) => {
+                if (e.target === modalOverlay) {
+                    closeAuditModal();
+                }
+            });
+        }
+        function getDetailedChanges(log) {
+            if (log.action_type !== 'EDIT' || !log.old_data || !log.new_data) {
+                return '';
+            }
+            const changes = getDetailedChangesList(log.old_data, log.new_data, log.entity_type);
+            if (changes.length === 0) {
+                return '';
+            }
+            return `
+                <div class="detail-section">
+                    <h4>Changes Made</h4>
+                    <div class="detail-card">
+                        ${changes.map(change => `
+                            <div class="change-detail">
+                                <div class="change-field">${change.field}</div>
+                                <div class="change-values">
+                                    <div class="old-value">
+                                        <span class="value-label">Before:</span>
+                                        <span class="value">${change.oldValue}</span>
+                                    </div>
+                                    <div class="new-value">
+                                        <span class="value-label">After:</span>
+                                        <span class="value">${change.newValue}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        function getDetailedData(log) {
+            let dataSection = '';
+            if (log.action_type === 'CREATE' && log.new_data) {
+                dataSection = `
+                    <div class="detail-section">
+                        <h4>Created Item Details</h4>
+                        <div class="detail-card">
+                            ${formatDataForDisplay(log.new_data, log.entity_type)}
+                        </div>
+                    </div>
+                `;
+            } else if (log.action_type === 'DELETE' && log.old_data) {
+                dataSection = `
+                    <div class="detail-section">
+                        <h4>Deleted Item Details</h4>
+                        <div class="detail-card">
+                            ${formatDataForDisplay(log.old_data, log.entity_type)}
+                        </div>
+                    </div>
+                `;
+            }
+            return dataSection;
+        }
+        function getDetailedChangesList(oldData, newData, entityType) {
+            const changes = [];
+            const fieldNames = {
+                'title': 'Title',
+                'event_date': 'Date',
+                'start_time': 'Start Time',
+                'end_time': 'End Time',
+                'name': 'Name',
+                'description': 'Description',
+                'event_type_id': 'Event Type'
+            };
+            Object.keys(fieldNames).forEach(field => {
+                if (oldData[field] !== newData[field]) {
+                    if (field === 'start_time' || field === 'end_time') {
+                        changes.push({
+                            field: fieldNames[field],
+                            oldValue: formatTimeForDisplay(oldData[field]) || 'Not set',
+                            newValue: formatTimeForDisplay(newData[field]) || 'Not set'
+                        });
+                    } 
+                    else if (field === 'event_date') {
+                        changes.push({
+                            field: fieldNames[field],
+                            oldValue: formatDateForDisplay(oldData[field]) || 'Not set',
+                            newValue: formatDateForDisplay(newData[field]) || 'Not set'
+                        });
+                    }
+                    else {
+                        changes.push({
+                            field: fieldNames[field],
+                            oldValue: oldData[field] || 'Not set',
+                            newValue: newData[field] || 'Not set'
+                        });
+                    }
+                }
+            });
+            return changes;
+        }
+        function formatTimeForDisplay(timeString) {
+            if (!timeString) return null;
+            try {
+                const [hours, minutes] = timeString.split(':');
+                const hour = parseInt(hours);
+                const ampm = hour >= 12 ? 'PM' : 'AM';
+                const displayHour = hour % 12 || 12;
+                return `${displayHour}:${minutes} ${ampm}`;
+            } catch {
+                return timeString;
+            }
+        }
+        function formatDateForDisplay(dateString) {
+            if (!dateString) return null;
+            try {
+                return new Date(dateString).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            } catch {
+                return dateString;
+            }
+        }
+        function formatDataForDisplay(data, entityType) {
+            let html = '';
+            if (data.title || data.name) {
+                html += `<div class="detail-row">
+                    <span class="detail-label">Name:</span>
+                    <span>${data.title || data.name}</span>
+                </div>`;
+            }
+            if (data.event_date) {
+                html += `<div class="detail-row">
+                    <span class="detail-label">Date:</span>
+                    <span>${data.event_date}</span>
+                </div>`;
+            }
+            if (data.start_time) {
+                html += `<div class="detail-row">
+                    <span class="detail-label">Start Time:</span>
+                    <span>${data.start_time}</span>
+                </div>`;
+            }
+            if (data.end_time) {
+                html += `<div class="detail-row">
+                    <span class="detail-label">End Time:</span>
+                    <span>${data.end_time}</span>
+                </div>`;
+            }
+            if (data.description) {
+                html += `<div class="detail-row">
+                    <span class="detail-label">Description:</span>
+                    <span>${data.description}</span>
+                </div>`;
+            }
+            if (data.bulletins && data.bulletins.length > 0) {
+                html += `<div class="detail-row">
+                    <span class="detail-label">Program Items:</span>
+                    <div class="bulletins-list">
+                        ${data.bulletins.map((bulletin, index) => `
+                            <div class="bulletin-item">
+                                <strong>${index + 1}. ${bulletin.title}</strong>
+                                ${bulletin.duration_minutes ? `<span class="duration">(${bulletin.duration_minutes} min)</span>` : ''}
+                                ${bulletin.preacher ? `<div class="preacher">Preacher: ${bulletin.preacher}</div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
+            }
+            return html || '<div class="detail-row">No additional details available</div>';
+        }
+        function closeAuditModal() {
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) {
+                modal.remove();
+            }
+        }
+        function formatLogTimestamp(timestamp) {
+            const logDate = new Date(timestamp);
+            const now = new Date();
+            const logDay = new Date(logDate.getFullYear(), logDate.getMonth(), logDate.getDate());
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const timeStr = logDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            if (logDay.getTime() === today.getTime()) {
+                return `Today at ${timeStr}`;
+            } else if (logDay.getTime() === yesterday.getTime()) {
+                return `Yesterday at ${timeStr}`;
+            } else {
+                const diffDays = Math.round((today - logDay) / (1000 * 60 * 60 * 24));
+                if (diffDays <= 7) {
+                    return `${diffDays} days ago at ${timeStr}`;
+                } else {
+                    return logDate.toLocaleDateString() + ' at ' + timeStr;
+                }
+            }
+        }
         // Tab Management
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize tabs
             const tabButtons = document.querySelectorAll('.tab-button');
             const tabContents = document.querySelectorAll('.tab-content');
             tabButtons.forEach(button => {
                 button.addEventListener('click', () => {
                     const targetTab = button.dataset.tab;
-                    // Update active states
                     tabButtons.forEach(btn => btn.classList.remove('active'));
                     tabContents.forEach(content => content.classList.remove('active'));
                     button.classList.add('active');
                     document.getElementById(`${targetTab}-tab`).classList.add('active');
-                    // Load appropriate data
                     if (targetTab === 'users') {
                         loadUsers();
                     } else if (targetTab === 'event-types') {
@@ -1505,29 +2154,25 @@ async function loadCurrentActivityForLocation(location) {
                     } else if (targetTab === 'audit-logs') {
                         loadLogs();
                     } else if (targetTab === 'control-panel') {
-                        loadLocations(); // <-- Changed from loadCurrentActivity()
+                        loadLocations();
                         setupControlPanelListeners();
                         isReady = true;
                     }
                 });
             });
-            // Initialize with users tab
             loadUsers();
             loadEventTypes();
-            // Setup user avatar and logout
             const user = AuthService.getCurrentUser();
             document.getElementById('userAvatar').textContent = 
                 user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
             document.getElementById('logoutBtn').addEventListener('click', () => {
                 AuthService.logout();
             });
-            // Mobile menu toggle
             const menuToggle = document.getElementById('menuToggle');
             const sidebar = document.getElementById('sidebar');
             menuToggle.addEventListener('click', () => {
                 sidebar.classList.toggle('active');
             });
-            // Close sidebar when clicking outside on mobile
             document.addEventListener('click', (e) => {
                 if (window.innerWidth <= 768 && 
                     !sidebar.contains(e.target) && 
@@ -1535,16 +2180,15 @@ async function loadCurrentActivityForLocation(location) {
                     sidebar.classList.remove('active');
                 }
             });
-            // Set up audit log filters
+            // NEW: Audit log filters and download
             document.getElementById('refreshBtn').addEventListener('click', () => loadLogs(1));
             document.getElementById('entityFilter').addEventListener('change', () => loadLogs(1));
             document.getElementById('actionFilter').addEventListener('change', () => loadLogs(1));
             document.getElementById('dateFilter').addEventListener('change', () => loadLogs(1));
-            // Remove the old, global activity refresh
-            // loadCurrentActivity();
-            // setInterval(loadCurrentActivity, 30000); // Refresh every 30 seconds
-            // setupControlPanelListeners();
+            document.getElementById('monthFilter').addEventListener('change', () => loadLogs(1));
+            document.getElementById('downloadBtn').addEventListener('click', downloadLogs);
         });
+        // ... [ALL OTHER EXISTING FUNCTIONS (loadUsers, loadEventTypes, etc.) REMAIN UNCHANGED] ...
         // User Management Functions
         async function loadUsers() {
             try {
@@ -1635,7 +2279,6 @@ async function loadCurrentActivityForLocation(location) {
                     method: 'PUT',
                     body: JSON.stringify({ role: newRole })
                 });
-                // Update local user role for UI
                 const user = users.find(u => u.id === userId);
                 if (user) user.role = newRole;
                 updateUserStats();
@@ -1712,11 +2355,9 @@ async function loadCurrentActivityForLocation(location) {
         function openEventTypeModal(eventTypeId = null) {
             const modal = document.getElementById('eventTypeModal');
             const form = document.getElementById('eventTypeForm');
-            // Reset form
             form.reset();
             document.getElementById('eventTypeId').value = '';
             if (eventTypeId) {
-                // Edit mode
                 const eventType = eventTypes.find(et => et.id === eventTypeId);
                 if (eventType) {
                     document.getElementById('modalTitle').textContent = 'Edit Event Type';
@@ -1724,7 +2365,6 @@ async function loadCurrentActivityForLocation(location) {
                     document.getElementById('eventTypeName').value = eventType.name;
                 }
             } else {
-                // Add mode
                 document.getElementById('modalTitle').textContent = 'Add New Event Type';
             }
             modal.style.display = 'block';
@@ -1768,20 +2408,17 @@ async function loadCurrentActivityForLocation(location) {
             try {
                 const eventTypeData = { name };
                 if (eventTypeId) {
-                    // Update existing event type
                     const response = await apiFetch(`${API_BASE}/event_types/${eventTypeId}`, {
                         method: 'PUT',
                         body: JSON.stringify(eventTypeData)
                     });
                     const updatedEventType = await response.json();
-                    // Update local array
                     const index = eventTypes.findIndex(et => et.id == eventTypeId);
                     if (index !== -1) {
                         eventTypes[index] = { id: parseInt(eventTypeId), name };
                     }
                     showMessage('Event type updated successfully!', 'success');
                 } else {
-                    // Create new event type
                     const response = await apiFetch(`${API_BASE}/event_types`, {
                         method: 'POST',
                         body: JSON.stringify(eventTypeData)
@@ -1936,14 +2573,12 @@ async function loadCurrentActivityForLocation(location) {
                     bulletins: templateItems
                 };
                 if (editTemplateId) {
-                    // Update existing template
                     await apiFetch(`${API_BASE}/templates/${editTemplateId}`, {
                         method: 'PUT',
                         body: JSON.stringify(templateData)
                     });
                     showMessage('Template updated successfully!', 'success');
                 } else {
-                    // Create new template
                     await apiFetch(`${API_BASE}/templates`, {
                         method: 'POST',
                         body: JSON.stringify(templateData)
@@ -1993,7 +2628,6 @@ async function loadCurrentActivityForLocation(location) {
         }
         async function editTemplate(templateId) {
             try {
-                // Get template details
                 const template = templates.find(t => t.id === templateId);
                 if (!template) {
                     showMessage('Template not found', 'error');
@@ -2001,7 +2635,6 @@ async function loadCurrentActivityForLocation(location) {
                 }
                 document.getElementById('templateName').value = template.name;
                 document.getElementById('templateDescription').value = template.description || '';
-                // Get template bulletins
                 const response = await apiFetch(`${API_BASE}/templates/${templateId}/bulletins`);
                 const items = await response.json();
                 templateItems = items.map((item, idx) => ({
@@ -2039,568 +2672,11 @@ async function loadCurrentActivityForLocation(location) {
                 closeConfirmModal();
             }
         }
-        // Audit Logs Functions
-        async function loadLogs(page = 1) {
-            currentPage = page;
-            const entityFilter = document.getElementById('entityFilter').value;
-            const actionFilter = document.getElementById('actionFilter').value;
-            const dateFilter = document.getElementById('dateFilter').value;
-            try {
-                const token = AuthService.getToken();
-                if (!token) {
-                    throw new Error('No access token found');
-                }
-                // Build query parameters
-                const params = new URLSearchParams();
-                params.append('page', page);
-                if (entityFilter !== 'ALL') params.append('entity', entityFilter);
-                if (actionFilter !== 'ALL') params.append('action', actionFilter);
-                if (dateFilter) params.append('date', dateFilter);
-                const response = await fetch(`${API_BASE}/audit-logs?${params}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Failed to fetch logs');
-                }
-                const data = await response.json();
-                renderLogs(data.logs);
-                renderPagination(data);
-            } catch (error) {
-                console.error('Error loading logs:', error);
-                document.getElementById('logList').innerHTML = `
-                    <div style="color: red; padding: 20px; text-align: center;">
-                        Error loading logs: ${error.message}
-                    </div>
-                `;
-                document.getElementById('pagination').innerHTML = '';
-            }
-        }
-        function renderLogs(logs) {
-            const logList = document.getElementById('logList');
-            logList.innerHTML = '';
-            if (logs.length === 0) {
-                logList.innerHTML = '<div style="text-align: center; color: #64748b; padding: 40px;">No activity logs found for the selected filters.</div>';
-                return;
-            }
-            logs.forEach(log => {
-                const logEntry = document.createElement('div');
-                logEntry.className = `log-entry ${log.action_type}`;
-                const timeDisplay = formatLogTimestamp(log.timestamp);
-                // Create human-readable descriptions
-                const description = getActionDescription(log);
-                const actionIcon = getActionIcon(log.action_type);
-                logEntry.innerHTML = `
-                    <div class="log-header">
-                        <div class="log-user-info">
-                            <div class="user-avatar-small">${(log.user_name || log.user_email).charAt(0).toUpperCase()}</div>
-                            <div>
-                                <div class="log-user">${log.user_name || 'Unknown User'}</div>
-                                <div class="log-user-email">${log.user_email}</div>
-                            </div>
-                        </div>
-                        <div class="log-time-container">
-                            <div class="log-time">${timeDisplay}</div>
-                            <span class="log-action ${log.action_type}">
-                                ${actionIcon} ${getActionText(log.action_type)}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="log-description">
-                        ${description}
-                    </div>
-                    ${getDetailsSummary(log)}
-                    <div class="log-expandable">
-                        <span class="expand-text">Click to view detailed information</span>
-                        <i class="fas fa-chevron-right expand-icon"></i>
-                    </div>
-                `;
-                // Add click handler for expanding details
-                logEntry.addEventListener('click', () => showLogDetails(log));
-                logList.appendChild(logEntry);
-            });
-        }
-        function getActionIcon(actionType) {
-            const icons = {
-                'CREATE': '<i class="fas fa-plus-circle"></i>',
-                'EDIT': '<i class="fas fa-edit"></i>',
-                'DELETE': '<i class="fas fa-trash-alt"></i>',
-                'VIEW': '<i class="fas fa-eye"></i>'
-            };
-            return icons[actionType] || '<i class="fas fa-question-circle"></i>';
-        }
-        function getActionText(actionType) {
-            const texts = {
-                'CREATE': 'Created',
-                'EDIT': 'Modified',
-                'DELETE': 'Deleted',
-                'VIEW': 'Viewed'
-            };
-            return texts[actionType] || actionType;
-        }
-        function getActionDescription(log) {
-            const entityMap = {
-                'EVENT': 'service event',
-                'BULLETIN': 'service program item',
-                'TEMPLATE': 'service template'
-            };
-            const entityName = entityMap[log.entity_type] || log.entity_type.toLowerCase();
-            const action = getActionText(log.action_type).toLowerCase();
-            // Try to get a meaningful name from the data
-            let itemName = '';
-            if (log.new_data && log.new_data.title) {
-                itemName = `"${log.new_data.title}"`;
-            } else if (log.old_data && log.old_data.title) {
-                itemName = `"${log.old_data.title}"`;
-            } else if (log.new_data && log.new_data.name) {
-                itemName = `"${log.new_data.name}"`;
-            } else if (log.old_data && log.old_data.name) {
-                itemName = `"${log.old_data.name}"`;
-            } else {
-                itemName = `#${log.entity_id}`;
-            }
-            // Add more context for time changes in the description
-            if (log.action_type === 'EDIT' && log.old_data && log.new_data) {
-                if (log.old_data.start_time !== log.new_data.start_time || 
-                    log.old_data.end_time !== log.new_data.end_time) {
-                    const oldTime = log.old_data.start_time ? formatTimeForDisplay(log.old_data.start_time) : 'Not set';
-                    const newTime = log.new_data.start_time ? formatTimeForDisplay(log.new_data.start_time) : 'Not set';
-                    return `${getActionText(log.action_type)} ${entityName} ${itemName} (time changed from ${oldTime} to ${newTime})`;
-                }
-                if (log.old_data.event_date !== log.new_data.event_date) {
-                    const oldDate = log.old_data.event_date ? formatDateForDisplay(log.old_data.event_date) : 'Not set';
-                    const newDate = log.new_data.event_date ? formatDateForDisplay(log.new_data.event_date) : 'Not set';
-                    return `${getActionText(log.action_type)} ${entityName} ${itemName} (date changed from ${oldDate} to ${newDate})`;
-                }
-            }
-            return `${getActionText(log.action_type)} ${entityName} ${itemName}`;
-        }
-        function getDetailsSummary(log) {
-            if (!log.old_data && !log.new_data) {
-                return '';
-            }
-            // For creates, show what was created
-            if (log.action_type === 'CREATE' && log.new_data) {
-                const summary = getCreateSummary(log.new_data, log.entity_type);
-                if (summary) {
-                    return `
-                        <div class="log-summary">
-                            <div class="summary-title">Details:</div>
-                            <div class="summary-content">${summary}</div>
-                        </div>
-                    `;
-                }
-            }
-            // For edits, show what changed
-            if (log.action_type === 'EDIT' && log.old_data && log.new_data) {
-                const changes = getChanges(log.old_data, log.new_data, log.entity_type);
-                if (changes.length > 0) {
-                    return `
-                        <div class="log-summary">
-                            <div class="summary-title">Changes made:</div>
-                            <div class="summary-content">
-                                ${changes.map(change => `<div class="change-item">${change}</div>`).join('')}
-                            </div>
-                        </div>
-                    `;
-                }
-            }
-            // For deletes, show what was deleted
-            if (log.action_type === 'DELETE' && log.old_data) {
-                const summary = getDeleteSummary(log.old_data, log.entity_type);
-                if (summary) {
-                    return `
-                        <div class="log-summary">
-                            <div class="summary-title">What was deleted:</div>
-                            <div class="summary-content">${summary}</div>
-                        </div>
-                    `;
-                }
-            }
-            return '';
-        }
-        function getCreateSummary(data, entityType) {
-            if (entityType === 'EVENT') {
-                return `Service scheduled for ${data.event_date} at ${data.start_time}`;
-            }
-            if (entityType === 'TEMPLATE') {
-                const bulletinCount = data.bulletins ? data.bulletins.length : 0;
-                return `Template with ${bulletinCount} program items`;
-            }
-            return '';
-        }
-        function getDeleteSummary(data, entityType) {
-            if (entityType === 'EVENT') {
-                return `Service that was scheduled for ${data.event_date || 'unknown date'}`;
-            }
-            if (entityType === 'TEMPLATE') {
-                return `Template that contained service program items`;
-            }
-            return '';
-        }
-        function getChanges(oldData, newData, entityType) {
-            const changes = [];
-            const fieldNames = {
-                'title': 'Title',
-                'event_date': 'Date',
-                'start_time': 'Start Time',
-                'end_time': 'End Time',
-                'name': 'Name',
-                'description': 'Description',
-                'event_type_id': 'Event Type'
-            };
-            // Compare common fields
-            Object.keys(fieldNames).forEach(field => {
-                if (oldData[field] !== newData[field]) {
-                    const fieldName = fieldNames[field];
-                    // Special handling for time fields
-                    if (field === 'start_time' || field === 'end_time') {
-                        const oldValue = formatTimeForDisplay(oldData[field]) || 'Not set';
-                        const newValue = formatTimeForDisplay(newData[field]) || 'Not set';
-                        changes.push(`${fieldName} changed from ${oldValue} to ${newValue}`);
-                    }
-                    // Special handling for dates
-                    else if (field === 'event_date') {
-                        const oldValue = formatDateForDisplay(oldData[field]) || 'Not set';
-                        const newValue = formatDateForDisplay(newData[field]) || 'Not set';
-                        changes.push(`${fieldName} changed from ${oldValue} to ${newValue}`);
-                    }
-                    // General case
-                    else {
-                        const oldValue = oldData[field] || 'Not set';
-                        const newValue = newData[field] || 'Not set';
-                        changes.push(`${fieldName} changed from "${oldValue}" to "${newValue}"`);
-                    }
-                }
-            });
-            // Special handling for bulletins/program items
-            if (entityType === 'EVENT' || entityType === 'TEMPLATE') {
-                const oldBulletins = oldData.bulletins || [];
-                const newBulletins = newData.bulletins || [];
-                if (oldBulletins.length !== newBulletins.length) {
-                    changes.push(`Program items changed from ${oldBulletins.length} to ${newBulletins.length} items`);
-                } else if (oldBulletins.length > 0) {
-                    // Check for changes in individual bulletins
-                    const bulletinChanges = compareBulletins(oldBulletins, newBulletins);
-                    changes.push(...bulletinChanges);
-                }
-            }
-            return changes;
-        }
-        function compareBulletins(oldBulletins, newBulletins) {
-            const changes = [];
-            oldBulletins.forEach((oldBulletin, index) => {
-                const newBulletin = newBulletins[index];
-                if (!newBulletin) return;
-                if (oldBulletin.title !== newBulletin.title) {
-                    changes.push(`Program item ${index + 1} title changed from "${oldBulletin.title}" to "${newBulletin.title}"`);
-                }
-                if (oldBulletin.duration_minutes !== newBulletin.duration_minutes) {
-                    changes.push(`Program item ${index + 1} duration changed from ${oldBulletin.duration_minutes} min to ${newBulletin.duration_minutes} min`);
-                }
-                if (oldBulletin.preacher !== newBulletin.preacher) {
-                    changes.push(`Program item ${index + 1} preacher changed from "${oldBulletin.preacher || 'Not set'}" to "${newBulletin.preacher || 'Not set'}"`);
-                }
-            });
-            return changes;
-        }
-        function showLogDetails(log) {
-            // Create modal overlay
-            const modalOverlay = document.createElement('div');
-            modalOverlay.className = 'modal-overlay';
-            // Format timestamp
-            const timestamp = new Date(log.timestamp);
-            const formattedTime = timestamp.toLocaleString();
-            // Get action description
-            const description = getActionDescription(log);
-            const actionIcon = getActionIcon(log.action_type);
-            modalOverlay.innerHTML = `
-                <div class="audit-modal-content">
-                    <div class="audit-modal-header">
-                        <h3><i class="fas fa-info-circle"></i> Activity Details</h3>
-                        <button class="modal-close" onclick="closeAuditModal()">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="audit-modal-body">
-                        <div class="detail-section">
-                            <h4>Action Summary</h4>
-                            <div class="detail-card">
-                                <div class="detail-row">
-                                    <span class="detail-label">Action:</span>
-                                    <span class="log-action ${log.action_type}">
-                                        ${actionIcon} ${getActionText(log.action_type)}
-                                    </span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">Description:</span>
-                                    <span>${description}</span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">When:</span>
-                                    <span>${formattedTime}</span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">Who:</span>
-                                    <span>${log.user_name || 'Unknown User'} (${log.user_email})</span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">From IP:</span>
-                                    <span>${log.ip_address || 'Unknown'}</span>
-                                </div>
-                            </div>
-                        </div>
-                        ${getDetailedChanges(log)}
-                        ${getDetailedData(log)}
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modalOverlay);
-            // Add event listener to close modal when clicking overlay
-            modalOverlay.addEventListener('click', (e) => {
-                if (e.target === modalOverlay) {
-                    closeAuditModal();
-                }
-            });
-        }
-        function getDetailedChanges(log) {
-            if (log.action_type !== 'EDIT' || !log.old_data || !log.new_data) {
-                return '';
-            }
-            const changes = getDetailedChangesList(log.old_data, log.new_data, log.entity_type);
-            if (changes.length === 0) {
-                return '';
-            }
-            return `
-                <div class="detail-section">
-                    <h4>Changes Made</h4>
-                    <div class="detail-card">
-                        ${changes.map(change => `
-                            <div class="change-detail">
-                                <div class="change-field">${change.field}</div>
-                                <div class="change-values">
-                                    <div class="old-value">
-                                        <span class="value-label">Before:</span>
-                                        <span class="value">${change.oldValue}</span>
-                                    </div>
-                                    <div class="new-value">
-                                        <span class="value-label">After:</span>
-                                        <span class="value">${change.newValue}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }
-        function getDetailedData(log) {
-            let dataSection = '';
-            if (log.action_type === 'CREATE' && log.new_data) {
-                dataSection = `
-                    <div class="detail-section">
-                        <h4>Created Item Details</h4>
-                        <div class="detail-card">
-                            ${formatDataForDisplay(log.new_data, log.entity_type)}
-                        </div>
-                    </div>
-                `;
-            } else if (log.action_type === 'DELETE' && log.old_data) {
-                dataSection = `
-                    <div class="detail-section">
-                        <h4>Deleted Item Details</h4>
-                        <div class="detail-card">
-                            ${formatDataForDisplay(log.old_data, log.entity_type)}
-                        </div>
-                    </div>
-                `;
-            }
-            return dataSection;
-        }
-        function getDetailedChangesList(oldData, newData, entityType) {
-            const changes = [];
-            const fieldNames = {
-                'title': 'Title',
-                'event_date': 'Date',
-                'start_time': 'Start Time',
-                'end_time': 'End Time',
-                'name': 'Name',
-                'description': 'Description',
-                'event_type_id': 'Event Type'
-            };
-            Object.keys(fieldNames).forEach(field => {
-                if (oldData[field] !== newData[field]) {
-                    // Special handling for time fields
-                    if (field === 'start_time' || field === 'end_time') {
-                        changes.push({
-                            field: fieldNames[field],
-                            oldValue: formatTimeForDisplay(oldData[field]) || 'Not set',
-                            newValue: formatTimeForDisplay(newData[field]) || 'Not set'
-                        });
-                    } 
-                    // Special handling for dates
-                    else if (field === 'event_date') {
-                        changes.push({
-                            field: fieldNames[field],
-                            oldValue: formatDateForDisplay(oldData[field]) || 'Not set',
-                            newValue: formatDateForDisplay(newData[field]) || 'Not set'
-                        });
-                    }
-                    else {
-                        changes.push({
-                            field: fieldNames[field],
-                            oldValue: oldData[field] || 'Not set',
-                            newValue: newData[field] || 'Not set'
-                        });
-                    }
-                }
-            });
-            return changes;
-        }
-        // Helper function to format time in a user-friendly way
-        function formatTimeForDisplay(timeString) {
-            if (!timeString) return null;
-            try {
-                const [hours, minutes] = timeString.split(':');
-                const hour = parseInt(hours);
-                const ampm = hour >= 12 ? 'PM' : 'AM';
-                const displayHour = hour % 12 || 12;
-                return `${displayHour}:${minutes} ${ampm}`;
-            } catch {
-                return timeString;
-            }
-        }
-        // Helper function to format dates
-        function formatDateForDisplay(dateString) {
-            if (!dateString) return null;
-            try {
-                return new Date(dateString).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-            } catch {
-                return dateString;
-            }
-        }
-        function formatDataForDisplay(data, entityType) {
-            let html = '';
-            // Common fields
-            if (data.title || data.name) {
-                html += `<div class="detail-row">
-                    <span class="detail-label">Name:</span>
-                    <span>${data.title || data.name}</span>
-                </div>`;
-            }
-            if (data.event_date) {
-                html += `<div class="detail-row">
-                    <span class="detail-label">Date:</span>
-                    <span>${data.event_date}</span>
-                </div>`;
-            }
-            if (data.start_time) {
-                html += `<div class="detail-row">
-                    <span class="detail-label">Start Time:</span>
-                    <span>${data.start_time}</span>
-                </div>`;
-            }
-            if (data.end_time) {
-                html += `<div class="detail-row">
-                    <span class="detail-label">End Time:</span>
-                    <span>${data.end_time}</span>
-                </div>`;
-            }
-            if (data.description) {
-                html += `<div class="detail-row">
-                    <span class="detail-label">Description:</span>
-                    <span>${data.description}</span>
-                </div>`;
-            }
-            // Show bulletins/program items if present
-            if (data.bulletins && data.bulletins.length > 0) {
-                html += `<div class="detail-row">
-                    <span class="detail-label">Program Items:</span>
-                    <div class="bulletins-list">
-                        ${data.bulletins.map((bulletin, index) => `
-                            <div class="bulletin-item">
-                                <strong>${index + 1}. ${bulletin.title}</strong>
-                                ${bulletin.duration_minutes ? `<span class="duration">(${bulletin.duration_minutes} min)</span>` : ''}
-                                ${bulletin.preacher ? `<div class="preacher">Preacher: ${bulletin.preacher}</div>` : ''}
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>`;
-            }
-            return html || '<div class="detail-row">No additional details available</div>';
-        }
-        function closeAuditModal() {
-            const modal = document.querySelector('.modal-overlay');
-            if (modal) {
-                modal.remove();
-            }
-        }
-        function formatLogTimestamp(timestamp) {
-            const logDate = new Date(timestamp);
-            const now = new Date();
-            // Set both dates to midnight for accurate day comparison
-            const logDay = new Date(logDate.getFullYear(), logDate.getMonth(), logDate.getDate());
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const yesterday = new Date(today);
-            yesterday.setDate(yesterday.getDate() - 1);
-            // Format the time part
-            const timeStr = logDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            if (logDay.getTime() === today.getTime()) {
-                return `Today at ${timeStr}`;
-            } else if (logDay.getTime() === yesterday.getTime()) {
-                return `Yesterday at ${timeStr}`;
-            } else {
-                const diffDays = Math.round((today - logDay) / (1000 * 60 * 60 * 24));
-                if (diffDays <= 7) {
-                    return `${diffDays} days ago at ${timeStr}`;
-                } else {
-                    return logDate.toLocaleDateString() + ' at ' + timeStr;
-                }
-            }
-        }
-        function renderPagination(data) {
-            const pagination = document.getElementById('pagination');
-            pagination.innerHTML = '';
-            totalPages = data.total_pages;
-            // Previous button
-            const prevBtn = document.createElement('button');
-            prevBtn.className = 'pagination-btn';
-            prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
-            prevBtn.disabled = currentPage === 1;
-            prevBtn.addEventListener('click', () => loadLogs(currentPage - 1));
-            pagination.appendChild(prevBtn);
-            // Page numbers
-            const startPage = Math.max(1, currentPage - 2);
-            const endPage = Math.min(totalPages, currentPage + 2);
-            for (let i = startPage; i <= endPage; i++) {
-                const pageBtn = document.createElement('button');
-                pageBtn.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
-                pageBtn.textContent = i;
-                pageBtn.addEventListener('click', () => loadLogs(i));
-                pagination.appendChild(pageBtn);
-            }
-            // Next button
-            const nextBtn = document.createElement('button');
-            nextBtn.className = 'pagination-btn';
-            nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
-            nextBtn.disabled = currentPage === totalPages;
-            nextBtn.addEventListener('click', () => loadLogs(currentPage + 1));
-            pagination.appendChild(nextBtn);
-        }
         // Utility Functions
         function showMessage(message, type = 'success') {
             const alertElement = document.getElementById(type === 'success' ? 'successMessage' : 'errorMessage');
             alertElement.textContent = message;
             alertElement.style.display = 'block';
-            // Auto-hide after 5 seconds
             setTimeout(() => {
                 alertElement.style.display = 'none';
             }, 5000);
@@ -2617,7 +2693,6 @@ async function loadCurrentActivityForLocation(location) {
             modal.classList.remove('show');
             setTimeout(() => modal.style.display = 'none', 300);
         }
-        // Close modals when clicking outside
         window.onclick = function(event) {
             const eventTypeModal = document.getElementById('eventTypeModal');
             const confirmModal = document.getElementById('confirmModal');
@@ -2628,7 +2703,6 @@ async function loadCurrentActivityForLocation(location) {
                 closeConfirmModal();
             }
         }
-        // Make closeAuditModal globally accessible
         window.closeAuditModal = closeAuditModal;
     </script>
 </body>

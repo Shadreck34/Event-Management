@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Worship Scheduler</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="stylenew.css">
+  <script src="auth.js"></script>
+  <style>
+    .room-container {
+      margin: 20px auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+      background: rgba(255,255,255,0.9);
+      max-width: 480px;
+      position: relative;
+      transition: all 0.4s ease;
+    }
+    .room-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .room-name {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    .room-activity-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 10px 0 14px 0;
+      line-height: 1.3;
+    }
+    .room-activity-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2c3e50;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .room-activity-subtitle {
+      font-size: 16px;
+      font-weight: 500;
+      color: #475569;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .room-activity-preacher {
+      font-size: 15px;
+      font-weight: 500;
+      color: #64748b;
+      font-style: normal;
+      white-space: nowrap;
+      margin-top: 4px;
+    }
+    .room-activity-preacher::before {
+      content: "by ";
+      font-weight: 600;
+      color: #475569;
+    }
+    .room-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .fs-btn {
+      border: none;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    .fs-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    #toggleLocationBtn {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 1000;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    #toggleLocationBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
+    }
+    #activity {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 32px;
+      color: #2c3e50;
+      letter-spacing: -0.5px;
+      line-height: 1.3;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .room-clock {
+      display: block;
+      margin: 0 auto 32px auto;
+      background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+      border-radius: 50%;
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      transition: all 0.4s ease;
+      border: 8px solid rgba(255, 255, 255, 0.8);
+    }
+    .room-digital {
+      font-size: 32px;
+      font-weight: 800;
+      color: #2c3e50;
+      margin-bottom: 16px;
+      letter-spacing: 4px;
+      font-family: 'Courier New', monospace;
+      background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+      border-radius: 16px;
+      padding: 16px 24px;
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+    .room-countdown {
+      font-size: 18px;
+      font-weight: 600;
+      color: #475569;
+      background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+      border-radius: 12px;
+      padding: 16px 24px;
+      box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(34, 197, 94, 0.2);
+      transition: all 0.3s ease;
+    }
+    .status-offline {
+      background: linear-gradient(135deg, #fef2f2, #fee2e2) !important;
+      color: #dc2626 !important;
+      border-color: rgba(220, 38, 38, 0.2) !important;
+    }
+    .room-fullscreen-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      padding: 20px 0 0;
+      margin: 0;
+      box-sizing: border-box;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .room-fullscreen-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .room-fullscreen-content {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 0;
+      margin: 0;
+      box-sizing: border-box;
+      position: relative;
+    }
+    .room-fullscreen-content .room-activity-bar {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 18px !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      z-index: 2;
+    }
+    .room-fullscreen-content .room-activity-title {
+      font-size: clamp(32px, 7vw, 58px) !important;
+      color: white !important;
+      background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+      filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.3)) !important;
+      font-weight: 800 !important;
+      text-align: center;
+      white-space: nowrap !important;
+      margin: 0 !important;
+      line-height: 1.1;
+      width: fit-content !important;
+      max-width: none !important;
+      padding: 0 10px;
+    }
+    .room-fullscreen-content .room-activity-subtitle {
+      font-size: clamp(24px, 5.5vw, 42px) !important;
+      color: rgba(255, 255, 255, 0.95) !important;
+      font-weight: 600 !important;
+      text-align: center;
+      white-space: nowrap !important;
+      width: fit-content !important;
+      max-width: none !important;
+      line-height: 1.2;
+      padding: 0 10px;
+    }
+    .room-fullscreen-content .room-activity-preacher {
+      font-size: clamp(20px, 4vw, 30px) !important;
+      color: rgba(255, 255, 255, 0.9) !important;
+      margin-top: 12px !important;
+      display: block !important;
+      white-space: nowrap !important;
+      width: fit-content !important;
+      max-width: none !important;
+      font-weight: 600 !important;
+      padding: 0 10px;
+    }
+    .room-fullscreen-content .room-activity-preacher::before {
+      color: rgba(255, 255, 255, 0.85) !important;
+    }
+    .room-fullscreen-content .room-name {
+      display: none !important;
+    }
+    .room-fullscreen-content .room-clock {
+      width: min(48vw, 44vh) !important;
+      height: min(48vw, 44vh) !important;
+      margin: 20px auto !important;
+      background: radial-gradient(circle at 30% 30%, #f8fafc, #cbd5e1) !important;
+      border: 10px solid rgba(255, 255, 255, 0.9) !important;
+      box-shadow: 
+        0 0 30px rgba(255, 255, 255, 0.2),
+        inset 0 2px 15px rgba(0, 0, 0, 0.1) !important;
+      z-index: 1;
+    }
+    .room-fullscreen-content .room-digital {
+      font-size: clamp(24px, 5vw, 40px) !important;
+      padding: 16px 24px !important;
+      margin: 10px auto !important;
+      background: rgba(255, 255, 255, 0.95) !important;
+      backdrop-filter: blur(20px) !important;
+      border: 2px solid rgba(255, 255, 255, 0.3) !important;
+      letter-spacing: 3px !important;
+      min-width: 260px !important;
+      max-width: 95%;
+      line-height: 1.2;
+      font-weight: 700;
+      z-index: 1;
+    }
+    .room-fullscreen-content .room-countdown {
+      font-size: clamp(20px, 4vw, 30px) !important;
+      padding: 14px 22px !important;
+      background: rgba(255, 255, 255, 0.9) !important;
+      backdrop-filter: blur(20px) !important;
+      border: 2px solid rgba(255, 255, 255, 0.3) !important;
+      min-width: 260px !important;
+      max-width: 95%;
+      line-height: 1.3;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      z-index: 1;
+    }
+    .room-fullscreen-content .room-countdown.status-offline {
+      background: rgba(239, 68, 68, 0.9) !important;
+      color: white !important;
+      border-color: rgba(255, 255, 255, 0.3) !important;
+    }
+    .room-container.in-fullscreen-mode .fs-btn {
+      display: none !important;
+    }
+    .exit-fullscreen-btn {
+      position: fixed;
+      top: 60px;
+      right: 20px;
+      z-index: 10001;
+      background: rgba(239, 68, 68, 0.9);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+    }
+    .exit-fullscreen-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(239, 68, 68, 0.6);
+    }
+    body.room-fullscreen-active .dashboard,
+    body.room-fullscreen-active .menu-toggle,
+    body.room-fullscreen-active #mainContainer,
+    body.room-fullscreen-active #toggleLocationBtn {
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+    body.room-fullscreen-active {
+      overflow: hidden !important;
+      background: transparent !important;
+      padding: 0 !important;
+    }
+    .no-events {
+      text-align: center;
+      color: #64748b;
+      font-style: italic;
+      padding: 20px;
+    }
+    .upcoming-countdown {
+      background: linear-gradient(135deg, #f0f9ff, #e0f2fe) !important;
+      border-color: rgba(59, 130, 246, 0.2) !important;
+      color: #1d4ed8 !important;
+    }
+    @keyframes blinking {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0.3; }
+    }
+  </style>
+</head>
+<body>
+  <div class="room-fullscreen-overlay" id="roomFullscreenOverlay">
+    <div class="room-fullscreen-content" id="roomFullscreenContent"></div>
+    <button class="exit-fullscreen-btn" id="roomExitBtn">
+      <i class="fas fa-times"></i> Exit Fullscreen
+    </button>
+  </div>
+  <div class="dashboard">
+    <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header"><h2><i class="fas fa-clock"></i> Smart Clock</h2></div>
+      <div class="nav-menu">
+        <div class="nav-item"><a href="index.html" class="nav-link active"><i class="fas fa-home"></i> Live Dashboard</a></div>
+        <div class="nav-item"><a href="start_planning.html" class="nav-link"><i class="fas fa-calendar-plus"></i> Schedule Event</a></div>
+        <div class="nav-item"><a href="view_plans.html" class="nav-link"><i class="fas fa-calendar-alt"></i> View Events</a></div>
+        <div class="nav-item"><a href="reports.html" class="nav-link"><i class="fas fa-chart-bar"></i> Analytics & Reports</a></div>
+        <div class="nav-item"><a href="admin.html" class="nav-link"><i class="fas fa-users-cog"></i> Management Panel</a></div>
+      </div>
+    </div>
+    <div class="main-content">
+      <div class="header">
+        <h1><i class="fas fa-clock"></i> Current Activity</h1>
+        <div class="user-info">
+          <div class="user-avatar" id="userAvatar">AD</div>
+          <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></button>
+        </div>
+      </div>
+      <button id="toggleLocationBtn" onclick="toggleLocationDisplay()">📍 Hide Location</button>
+      <div class="container" id="mainContainer">
+        <h1 id="activity">Activity: --</h1>
+        <div id="rooms"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentRoomFullscreen = null;
+    let clockIntervals = new Map();
+    let originalCanvasData = new Map();
+    let originalRoomData = new Map();
+    let showLocation = true;
+
+    function resizeAndRedrawCanvas(canvas, newSize) {
+      if (!canvas) return;
+      const canvasId = canvas.id;
+      if (clockIntervals.has(canvasId)) clearInterval(clockIntervals.get(canvasId));
+      if (!originalCanvasData.has(canvasId)) {
+        originalCanvasData.set(canvasId, { width: canvas.width, height: canvas.height });
+      }
+      canvas.width = newSize;
+      canvas.height = newSize;
+      const ctx = canvas.getContext('2d');
+      const radius = newSize / 2;
+      drawClockFace(ctx, canvas, radius);
+      const interval = setInterval(() => drawClockFace(ctx, canvas, radius), 1000);
+      clockIntervals.set(canvasId, interval);
+    }
+
+    function toggleLocationDisplay() {
+      showLocation = !showLocation;
+      const btn = document.getElementById('toggleLocationBtn');
+      btn.textContent = showLocation ? '📍 Hide Location' : '📍 Show Location';
+      updateActivity();
+    }
+
+    function toggleRoomFullscreen(roomId) {
+      const roomElement = document.getElementById(roomId);
+      if (!roomElement) return;
+      const overlay = document.getElementById('roomFullscreenOverlay');
+      const content = document.getElementById('roomFullscreenContent');
+
+      if (currentRoomFullscreen === roomId && overlay.classList.contains('active')) {
+        exitRoomFullscreen();
+        return;
+      }
+      if (currentRoomFullscreen && currentRoomFullscreen !== roomId) exitRoomFullscreen();
+
+      originalRoomData.set(roomId, {
+        parent: roomElement.parentNode,
+        nextSibling: roomElement.nextSibling
+      });
+
+      const roomButton = roomElement.querySelector('.fs-btn');
+      if (roomButton) roomButton.style.display = 'none';
+      roomElement.classList.add('in-fullscreen-mode');
+
+      content.innerHTML = '';
+      content.appendChild(roomElement);
+
+      roomElement.style.cssText = 'position:relative;width:100%;maxWidth:none;margin:0;padding:0;background:transparent;border:none;boxShadow:none;';
+
+      const canvas = roomElement.querySelector('canvas');
+      if (canvas) {
+        const size = Math.min(window.innerWidth * 0.48, window.innerHeight * 0.44);
+        resizeAndRedrawCanvas(canvas, size);
+      }
+
+      overlay.classList.add('active');
+      document.body.classList.add('room-fullscreen-active');
+      currentRoomFullscreen = roomId;
+      if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+    }
+
+    function exitRoomFullscreen() {
+      if (!currentRoomFullscreen) return;
+      const roomId = currentRoomFullscreen;
+      const roomElement = document.getElementById(roomId);
+      const overlay = document.getElementById('roomFullscreenOverlay');
+      if (!roomElement) return;
+
+      const originalData = originalRoomData.get(roomId);
+      const roomButton = roomElement.querySelector('.fs-btn');
+      if (roomButton) roomButton.style.display = '';
+
+      roomElement.classList.remove('in-fullscreen-mode');
+      roomElement.style.cssText = '';
+
+      if (originalData && originalData.parent) {
+        if (originalData.nextSibling) originalData.parent.insertBefore(roomElement, originalData.nextSibling);
+        else originalData.parent.appendChild(roomElement);
+      }
+
+      const canvas = roomElement.querySelector('canvas');
+      if (canvas) {
+        const size = originalCanvasData.has(canvas.id) ? originalCanvasData.get(canvas.id).width : 300;
+        resizeAndRedrawCanvas(canvas, size);
+      }
+
+      overlay.classList.remove('active');
+      document.body.classList.remove('room-fullscreen-active');
+      currentRoomFullscreen = null;
+      originalRoomData.delete(roomId);
+      if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    }
+
+    function drawClockFace(ctx, canvas, radius) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.translate(radius, radius);
+      const actualRadius = radius - 20;
+      const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, actualRadius);
+      gradient.addColorStop(0, '#ffffff');
+      gradient.addColorStop(0.7, '#f8fafc');
+      gradient.addColorStop(1, '#e2e8f0');
+      ctx.beginPath();
+      ctx.arc(0, 0, actualRadius, 0, 2 * Math.PI);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(0, 0, actualRadius - 15, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      drawNumbers(ctx, actualRadius);
+      drawMarkers(ctx, actualRadius);
+      drawTime(ctx, actualRadius);
+      const centerGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 8);
+      centerGradient.addColorStop(0, '#667eea');
+      centerGradient.addColorStop(1, '#764ba2');
+      ctx.beginPath();
+      ctx.arc(0, 0, 8, 0, 2 * Math.PI);
+      ctx.fillStyle = centerGradient;
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawNumbers(ctx, radius) {
+      const fontSize = Math.max(16, radius / 8);
+      ctx.font = `bold ${fontSize}px 'Segoe UI', Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#1e293b';
+      for (let num = 1; num <= 12; num++) {
+        const angle = (num - 3) * (Math.PI / 6);
+        const x = Math.cos(angle) * (radius - 35);
+        const y = Math.sin(angle) * (radius - 35);
+        ctx.fillText(num.toString(), x, y);
+      }
+    }
+
+    function drawMarkers(ctx, radius) {
+      ctx.strokeStyle = '#475569';
+      for (let i = 0; i < 12; i++) {
+        const angle = i * Math.PI / 6;
+        ctx.save();
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.moveTo(0, -(radius - 10));
+        ctx.lineTo(0, -(radius - 25));
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.restore();
+      }
+      ctx.strokeStyle = '#94a3b8';
+      for (let i = 0; i < 60; i++) {
+        if (i % 5 !== 0) {
+          const angle = i * Math.PI / 30;
+          ctx.save();
+          ctx.rotate(angle);
+          ctx.beginPath();
+          ctx.moveTo(0, -(radius - 10));
+          ctx.lineTo(0, -(radius - 18));
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    }
+
+    function drawTime(ctx, radius) {
+      const now = new Date();
+      const hour = now.getHours() % 12;
+      const minute = now.getMinutes();
+      const second = now.getSeconds();
+      const hourAngle = (hour + minute / 60) * Math.PI / 6 - Math.PI / 2;
+      drawHand(ctx, hourAngle, radius * 0.5, Math.max(8, radius / 20), '#1e293b');
+      const minAngle = (minute + second / 60) * Math.PI / 30 - Math.PI / 2;
+      drawHand(ctx, minAngle, radius * 0.75, Math.max(6, radius / 25), '#475569');
+      const secAngle = second * Math.PI / 30 - Math.PI / 2;
+      drawHand(ctx, secAngle, radius * 0.85, Math.max(2, radius / 60), '#ef4444');
+    }
+
+    function drawHand(ctx, angle, length, width, color) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.lineCap = 'round';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+      ctx.shadowBlur = 2;
+      ctx.shadowOffsetX = 1;
+      ctx.shadowOffsetY = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(angle) * length, Math.sin(angle) * length);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function updateActivity() {
+      fetch('http://127.0.0.1:5000/current_activity_by_location')
+        .then(res => res.ok ? res.json() : Promise.reject('Server error'))
+        .then(data => {
+          const roomsContainer = document.getElementById('rooms');
+          const existingNoEvents = roomsContainer.querySelector('.no-events');
+          if (existingNoEvents) existingNoEvents.remove();
+
+          const entries = Object.entries(data);
+          if (entries.length === 0) {
+            const note = document.createElement('div');
+            note.className = 'no-events';
+            note.textContent = 'No events scheduled today';
+            roomsContainer.appendChild(note);
+            return;
+          }
+
+          const seen = new Set();
+          entries.forEach(([rawLocation, item], idx) => {
+            const location = rawLocation || 'Unassigned Room';
+            const roomId = `room-${idx}`;
+            const canvasId = `${roomId}-clock`;
+            const digitalId = `${roomId}-digital`;
+            const countdownId = `${roomId}-countdown`;
+            seen.add(roomId);
+
+            let card = document.getElementById(roomId);
+            if (!card) {
+              card = document.createElement('div');
+              card.id = roomId;
+              card.className = 'room-container';
+              card.innerHTML = `
+                <div class="room-header">
+                  <h2 class="room-name"></h2>
+                  <button class="fs-btn" onclick="toggleRoomFullscreen('${roomId}')">⛶ Fullscreen</button>
+                </div>
+                <div class="room-activity-bar">
+                  <div class="room-activity-title"></div>
+                  <div class="room-activity-subtitle"></div>
+                  <div class="room-activity-preacher"></div>
+                </div>
+                <div class="room-content">
+                  <canvas class="room-clock" id="${canvasId}" width="300" height="300"></canvas>
+                  <div class="room-digital" id="${digitalId}">--:--:--</div>
+                  <div class="room-countdown" id="${countdownId}" data-start="" data-end="">Countdown: --</div>
+                </div>
+              `;
+              roomsContainer.appendChild(card);
+              setTimeout(() => {
+                const canvas = document.getElementById(canvasId);
+                if (canvas) {
+                  originalCanvasData.set(canvasId, { width: canvas.width, height: canvas.height });
+                  const ctx = canvas.getContext('2d');
+                  const radius = canvas.width / 2;
+                  drawClockFace(ctx, canvas, radius);
+                  const interval = setInterval(() => drawClockFace(ctx, canvas, radius), 1000);
+                  clockIntervals.set(canvas.id, interval);
+                }
+              }, 100);
+            }
+
+            const nameEl = card.querySelector('.room-name');
+            const titleEl = card.querySelector('.room-activity-title');
+            const subtitleEl = card.querySelector('.room-activity-subtitle');
+            const preacherEl = card.querySelector('.room-activity-preacher');
+            const countdownEl = document.getElementById(countdownId);
+
+            nameEl.textContent = location;
+            nameEl.style.display = showLocation ? 'block' : 'none';
+
+            titleEl.textContent = (item.event_title || '').toUpperCase();
+            subtitleEl.textContent = item.title || '';
+            
+            if (item.preacher && item.preacher.trim()) {
+              preacherEl.textContent = item.preacher.trim();
+              preacherEl.style.display = 'block';
+            } else {
+              preacherEl.style.display = 'none';
+            }
+
+            if (countdownEl) {
+              countdownEl.setAttribute('data-start', item.start_time || '');
+              countdownEl.setAttribute('data-end', item.end_time || '');
+            }
+          });
+
+          roomsContainer.querySelectorAll('.room-container').forEach(room => {
+            if (!seen.has(room.id)) {
+              const canvas = room.querySelector('canvas');
+              if (canvas && clockIntervals.has(canvas.id)) {
+                clearInterval(clockIntervals.get(canvas.id));
+                clockIntervals.delete(canvas.id);
+                originalCanvasData.delete(canvas.id);
+              }
+              room.remove();
+            }
+          });
+        })
+        .catch(err => console.error('Fetch error:', err));
+    }
+
+    function updateDigitalClock() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      document.querySelectorAll('.room-digital').forEach(el => el.textContent = timeString);
+    }
+
+    function startDigitalUpdates() {
+      setInterval(() => {
+        updateDigitalClock();
+        const now = new Date();
+        const today = now.toDateString();
+        document.querySelectorAll('.room-countdown').forEach(el => {
+          const start = el.getAttribute('data-start');
+          const end = el.getAttribute('data-end');
+          if (!start || !end) { el.textContent = 'Countdown: --'; return; }
+          const startDt = new Date(today + ' ' + start);
+          const endDt = new Date(today + ' ' + end);
+          const diffToStart = Math.floor((startDt - now) / 1000);
+          const diffToEnd = Math.floor((endDt - now) / 1000);
+          const status = now < startDt ? 'upcoming' : now <= endDt ? 'current' : 'completed';
+
+          if (status === 'upcoming') {
+            if (diffToStart > 0) {
+              const h = Math.floor(diffToStart / 3600);
+              const m = Math.floor((diffToStart % 3600) / 60);
+              const s = diffToStart % 60;
+              el.textContent = h > 0 ? `Starts in: ${h}h ${m}m ${s}s` : `Starts in: ${m}m ${s}s`;
+              el.classList.add('upcoming-countdown');
+              el.classList.remove('status-offline');
+              el.style.animation = diffToStart <= 180 ? 'blinking 1s infinite' : 'none';
+            } else {
+              el.textContent = 'Starting now...';
+            }
+          } else if (status === 'current') {
+            if (diffToEnd > 0) {
+              const h = Math.floor(diffToEnd / 3600);
+              const m = Math.floor((diffToEnd % 3600) / 60);
+              const s = diffToEnd % 60;
+              el.textContent = h > 0 ? `Ends in: ${h}h ${m}m ${s}s` : `Ends in: ${m}m ${s}s`;
+              el.classList.remove('upcoming-countdown', 'status-offline');
+              el.style.animation = diffToEnd <= 180 ? 'blinking 1s infinite' : 'none';
+            } else {
+              const overtime = Math.abs(diffToEnd);
+              const m = Math.floor(overtime / 60);
+              const s = overtime % 60;
+              el.textContent = `Overtime: ${m}m ${s}s`;
+              el.classList.add('status-offline');
+              el.style.animation = 'none';
+            }
+          } else {
+            el.textContent = 'Activity completed';
+            el.classList.remove('upcoming-countdown', 'status-offline');
+            el.style.animation = 'none';
+          }
+        });
+      }, 1000);
+    }
+
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    if (menuToggle && sidebar) {
+      menuToggle.addEventListener('click', () => sidebar.classList.toggle('active'));
+      document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768 && !sidebar.contains(e.target) && e.target !== menuToggle) {
+          sidebar.classList.remove('active');
+        }
+      });
+    }
+
+    function setupEventStream() {
+      const eventSource = new EventSource('http://127.0.0.1:5000/stream');
+      eventSource.onmessage = () => updateActivity();
+      eventSource.onerror = () => {
+        console.error('SSE Error');
+        setTimeout(setupEventStream, 5000);
+        eventSource.close();
+      };
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateActivity();
+      setInterval(updateActivity, 5000);
+      startDigitalUpdates();
+      setupEventStream();
+    });
+
+    window.addEventListener('beforeunload', () => {
+      clockIntervals.forEach(interval => clearInterval(interval));
+      clockIntervals.clear();
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement) {
+        if (currentRoomFullscreen) exitRoomFullscreen();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (currentRoomFullscreen) exitRoomFullscreen();
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (currentRoomFullscreen) {
+        const room = document.getElementById(currentRoomFullscreen);
+        if (room) {
+          const canvas = room.querySelector('canvas');
+          if (canvas) {
+            const size = Math.min(window.innerWidth * 0.48, window.innerHeight * 0.44);
+            resizeAndRedrawCanvas(canvas, size);
+          }
+        }
+      }
+    });
+
+    document.getElementById('roomExitBtn').addEventListener('click', exitRoomFullscreen);
+  </script>
+</body>
+</html>
