@@ -1,4 +1,4 @@
-from flask import Flask, json, request, jsonify, Response
+from flask import Flask, json, request, jsonify, Response, render_template
 from flask_mysqldb import MySQL
 from flask_cors import CORS
 from datetime import datetime, timedelta, timezone, time as dt_time
@@ -7,12 +7,37 @@ import bcrypt
 import jwt
 from functools import wraps
 import os
+import pymysql
+from urllib.parse import urlparse
 from queue import Queue
 
 from config import Config
 
-app = Flask(__name__)
+# Ensure PyMySQL is used as MySQLdb (required for some hosts like PlanetScale)
+pymysql.install_as_MySQLdb()
+
+# Serve the existing frontend folder as Flask's static/templates so we don't need to move files.
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+FRONTEND_DIR = os.path.normpath(os.path.join(BASE_DIR, '..', 'frontend'))
+
+# static_url_path='' serves static files (CSS/JS) at the app root (so files like /stylenew.css work)
+app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path='', template_folder=FRONTEND_DIR)
 app.config.from_object(Config)
+
+# If Render / PlanetScale provide a DATABASE_URL, parse it and override MySQL config
+db_url = os.getenv('DATABASE_URL')
+if db_url:
+    try:
+        url = urlparse(db_url)
+        app.config['MYSQL_HOST'] = url.hostname
+        app.config['MYSQL_USER'] = url.username
+        app.config['MYSQL_PASSWORD'] = url.password
+        app.config['MYSQL_DB'] = url.path[1:] if url.path else ''
+        if url.port:
+            app.config['MYSQL_PORT'] = int(url.port)
+    except Exception:
+        # If parsing fails, leave config from Config or env vars
+        pass
 
 # CORS configuration
 CORS(app, 
