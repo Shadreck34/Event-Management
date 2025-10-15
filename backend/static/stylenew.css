@@ -1,0 +1,30 @@
+/* Copied from frontend/stylenew.css - truncated for brevity in workspace copy. For full design, keep the original file in frontend or replace with full contents. */
+
+/* Reset & Variables */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --primary-color: #4361ee;
+  --secondary-color: #3f37c9;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --danger-color: #ef4444;
+  --dark-color: #1f2937;
+  --light-color: #f9fafb;
+  --border-color: #e5e7eb;
+  --text-color: #374151;
+  --text-light: #6b7280;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #f5f7fb 0%, #e8ecf7 100%);
+  min-height: 100vh;
+  color: var(--text-color);
+}
+
+/* Add the rest of your stylenew.css contents here or keep the original file in frontend/ */

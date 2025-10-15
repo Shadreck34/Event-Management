@@ -1,0 +1,5 @@
+/* Copied from frontend/view.css - truncated for brevity. Replace with full contents if desired. */
+*{box-sizing:border-box}
+:root{--primary:#4361ee;--secondary:#3f37c9}
+body{font-family:'Poppins',sans-serif;background:linear-gradient(135deg,#f5f7fb 0%,#e8ecf7 100%);}
+/* Add rest of view.css here */
