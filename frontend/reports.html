@@ -7,12 +7,12 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Required Libraries -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="stylenew.css">
-<style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="stylenew.css">
+    <style>
         :root {
             --primary: #4361ee;
             --secondary: #3f37c9;
@@ -602,30 +602,30 @@
 <script src="auth.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-    // Check authentication
-    if (!AuthService.isAuthenticated()) {
-        window.location.href = 'login.html';
-        return;
-    }
-    // Check if user has at least viewer role
-    if (!AuthService.hasRole('planner')) {
-        showError("You don't have permission to view plans");
-        window.location.href = 'index.html';
-        return;
-    }
-    // Display current user info
-    const user = AuthService.getCurrentUser();
-    if (user && document.getElementById('userName')) {
-        document.getElementById('userName').textContent = user.name || user.email;
-    }
-    // Set up logout button
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-            AuthService.logout();
-        });
-    }
-});
+        // Check authentication
+        if (!AuthService.isAuthenticated()) {
+            window.location.href = 'login.html';
+            return;
+        }
+        // Check if user has at least viewer role
+        if (!AuthService.hasRole('planner')) {
+            showError("You don't have permission to view plans");
+            window.location.href = 'index.html';
+            return;
+        }
+        // Display current user info
+        const user = AuthService.getCurrentUser();
+        if (user && document.getElementById('userName')) {
+            document.getElementById('userName').textContent = user.name || user.email;
+        }
+        // Set up logout button
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                AuthService.logout();
+            });
+        }
+    });
 </script>
 <body>
     <div class="dashboard">
@@ -698,13 +698,27 @@
                 <!-- Filter Section -->
                 <div class="filters">
                     <div class="filter-group">
-                        <label for="dateRange"><i class="fas fa-calendar"></i> Date Range</label>
-                        <select id="dateRange" class="form-control">
-                            <option value="7">Last 7 days</option>
-                            <option value="30" selected>Last 30 days</option>
-                            <option value="90">Last 90 days</option>
-                            <option value="365">Last year</option>
-                            <option value="all">All time</option>
+                        <label for="overviewMonthFilter"><i class="fas fa-calendar"></i> Month</label>
+                        <select id="overviewMonthFilter" class="form-control">
+                            <option value="all">All Months</option>
+                            <option value="0">January</option>
+                            <option value="1">February</option>
+                            <option value="2">March</option>
+                            <option value="3">April</option>
+                            <option value="4">May</option>
+                            <option value="5">June</option>
+                            <option value="6">July</option>
+                            <option value="7">August</option>
+                            <option value="8">September</option>
+                            <option value="9">October</option>
+                            <option value="10">November</option>
+                            <option value="11">December</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="overviewYearFilter"><i class="fas fa-calendar-day"></i> Year</label>
+                        <select id="overviewYearFilter" class="form-control">
+                            <!-- Populated dynamically -->
                         </select>
                     </div>
                     <div class="filter-group">
@@ -792,12 +806,27 @@
             <div id="overtime-tab" class="tab-content">
                 <div class="filters">
                     <div class="filter-group">
-                        <label for="overtimeDateRange"><i class="fas fa-calendar"></i> Date Range</label>
-                        <select id="overtimeDateRange" class="form-control" onchange="refreshOvertimeData()">
-                            <option value="7">Last 7 Days</option>
-                            <option value="30" selected>Last 30 Days</option>
-                            <option value="90">Last 90 Days</option>
-                            <option value="all">All Time</option>
+                        <label for="overtimeMonthFilter"><i class="fas fa-calendar"></i> Month</label>
+                        <select id="overtimeMonthFilter" class="form-control">
+                            <option value="all">All Months</option>
+                            <option value="0">January</option>
+                            <option value="1">February</option>
+                            <option value="2">March</option>
+                            <option value="3">April</option>
+                            <option value="4">May</option>
+                            <option value="5">June</option>
+                            <option value="6">July</option>
+                            <option value="7">August</option>
+                            <option value="8">September</option>
+                            <option value="9">October</option>
+                            <option value="10">November</option>
+                            <option value="11">December</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="overtimeYearFilter"><i class="fas fa-calendar-day"></i> Year</label>
+                        <select id="overtimeYearFilter" class="form-control">
+                            <!-- Populated dynamically -->
                         </select>
                     </div>
                     <div class="filter-group">
@@ -908,49 +937,30 @@
             eventTypes: []
         };
         let overtimeData = [];
-function setupFilterListeners() {
-  const dateRange = document.getElementById('dateRange');
-  const eventTypeFilter = document.getElementById('eventTypeFilter');
-  // ✅ Refresh when either filter changes
-  dateRange.addEventListener('change', refreshData);
-  eventTypeFilter.addEventListener('change', refreshData);
-}
-// Call this in DOMContentLoaded
-document.addEventListener('DOMContentLoaded', async () => {
-  // ... auth checks ...
-  setupTabs();
-  setupFilterListeners(); // ← Add this!
-  await initializeDashboard();
-});
-        // Initialize dashboard
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Check authentication (mock)
-            if (!AuthService.isAuthenticated()) {
-                console.log('Not authenticated');
-                return;
-            }
-            // Display current user info
-            const user = AuthService.getCurrentUser();
-            if (user) {
-                const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-                document.getElementById('userAvatar').textContent = initials;
-            }
-            // Initialize the dashboard
-            await initializeDashboard();
-            // Setup event listeners
-            setupEventListeners();
-            // Setup mobile menu
-            setupMobileMenu();
-            // Setup tabs
-            setupTabs();
-            // Auto-refresh every 5 minutes
-            setInterval(refreshData, 5 * 60 * 1000);
-        });
+
+        function showMessage(message, type = 'info') {
+            const msgDiv = document.getElementById('message');
+            if (!msgDiv) return;
+            msgDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(hideMessage, 5000);
+        }
+
+        function hideMessage() {
+            const msgDiv = document.getElementById('message');
+            if (msgDiv) msgDiv.innerHTML = '';
+        }
+
         function setupEventListeners() {
             document.getElementById('logoutBtn').addEventListener('click', AuthService.logout);
-            document.getElementById('dateRange').addEventListener('change', refreshData);
+            // Overview filters
+            document.getElementById('overviewMonthFilter').addEventListener('change', refreshData);
+            document.getElementById('overviewYearFilter').addEventListener('change', refreshData);
             document.getElementById('eventTypeFilter').addEventListener('change', refreshData);
+            // Overtime filters
+            document.getElementById('overtimeMonthFilter').addEventListener('change', loadOvertimeData);
+            document.getElementById('overtimeYearFilter').addEventListener('change', loadOvertimeData);
         }
+
         function setupMobileMenu() {
             const menuToggle = document.getElementById('menuToggle');
             const sidebar = document.getElementById('sidebar');
@@ -965,17 +975,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
         }
+
         function setupTabs() {
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', () => {
-                    // Remove active class from all tabs and content
                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                    // Add active class to clicked tab and corresponding content
                     tab.classList.add('active');
                     const tabId = tab.getAttribute('data-tab');
                     document.getElementById(`${tabId}-tab`).classList.add('active');
-                    // Load data if needed
                     if (tabId === 'overtime') {
                         loadOvertimeData();
                     } else if (tabId === 'attendance') {
@@ -984,8 +992,35 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             });
         }
+
+        function populateYearFilters() {
+            const currentYear = new Date().getFullYear();
+            const years = [];
+            for (let y = currentYear - 2; y <= currentYear + 2; y++) {
+                years.push(y);
+            }
+
+            const overviewYear = document.getElementById('overviewYearFilter');
+            const overtimeYear = document.getElementById('overtimeYearFilter');
+
+            years.forEach(year => {
+                const opt1 = document.createElement('option');
+                opt1.value = year;
+                opt1.textContent = year;
+                if (year === currentYear) opt1.selected = true;
+                overviewYear.appendChild(opt1);
+
+                const opt2 = document.createElement('option');
+                opt2.value = year;
+                opt2.textContent = year;
+                if (year === currentYear) opt2.selected = true;
+                overtimeYear.appendChild(opt2);
+            });
+        }
+
         async function initializeDashboard() {
             try {
+                populateYearFilters();
                 showMessage('Loading dashboard data...', 'info');
                 await Promise.all([
                     loadEventTypes(),
@@ -998,12 +1033,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.error('Dashboard initialization error:', error);
             }
         }
+
         async function loadEventTypes() {
             try {
                 const response = await authFetch(`${API_BASE}/event_types`);
                 const eventTypes = await response.json();
                 const select = document.getElementById('eventTypeFilter');
-                // Clear existing options except "All Types"
                 while (select.children.length > 1) {
                     select.removeChild(select.lastChild);
                 }
@@ -1017,12 +1052,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.error('Failed to load event types:', error);
             }
         }
+
         async function loadDashboardData() {
             try {
-                const dateRange = document.getElementById('dateRange').value;
+                const month = document.getElementById('overviewMonthFilter').value;
+                const year = document.getElementById('overviewYearFilter').value;
                 const eventType = document.getElementById('eventTypeFilter').value;
                 const params = new URLSearchParams({
-                    range: dateRange,
+                    month: month,
+                    year: year,
                     type: eventType
                 });
                 const response = await authFetch(`${API_BASE}/reports/statistics?${params}`);
@@ -1039,16 +1077,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 showMessage(`Failed to load statistics: ${error.message}`, 'error');
             }
         }
+
         function updateStatistics(stats) {
             document.getElementById('totalEvents').textContent = stats.total_events || 0;
             document.getElementById('totalAttendance').textContent = (stats.total_attendance || 0).toLocaleString();
             document.getElementById('avgAttendance').textContent = Math.round(stats.avg_attendance || 0);
             document.getElementById('avgDuration').textContent = Math.round(stats.avg_duration || 0);
         }
-       function updateCharts(data) {
-  updateAttendanceChart(data.trends || []);
-  updateEventTypesChart(data.event_types || []);
-}
+
+        function updateCharts(data) {
+            updateAttendanceChart(data.trends || []);
+            updateEventTypesChart(data.event_types || []);
+        }
+
         function updateAttendanceChart(trendsData) {
             const ctx = document.getElementById('attendanceChart').getContext('2d');
             if (attendanceChart) {
@@ -1128,6 +1169,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
         }
+
         function updateEventTypesChart(eventTypesData) {
             const ctx = document.getElementById('eventTypesChart').getContext('2d');
             if (eventTypesChart) {
@@ -1192,6 +1234,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
         }
+
         async function loadAttendanceData() {
             try {
                 const response = await authFetch(`${API_BASE}/reports/upcoming-events`);
@@ -1202,6 +1245,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 showMessage(`Failed to load attendance data: ${error.message}`, 'error');
             }
         }
+
         function renderAttendanceTracking(events) {
             const container = document.getElementById('attendanceGrid');
             container.innerHTML = '';
@@ -1265,10 +1309,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 container.appendChild(eventDiv);
             });
         }
+
         async function loadOvertimeData() {
             try {
-                const range = document.getElementById('overtimeDateRange').value;
-                const response = await authFetch(`${API_BASE}/reports/overtime-activities?range=${range}`);
+                const month = document.getElementById('overtimeMonthFilter').value;
+                const year = document.getElementById('overtimeYearFilter').value;
+                const params = new URLSearchParams({
+                    month: month,
+                    year: year
+                });
+                const response = await authFetch(`${API_BASE}/reports/overtime-activities?${params}`);
                 overtimeData = await response.json();
                 renderOvertimeTable(overtimeData);
                 updateOvertimeStats(overtimeData);
@@ -1277,6 +1327,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 showMessage(`Failed to load overtime report: ${error.message}`, 'error');
             }
         }
+
         function renderOvertimeTable(data) {
             const tbody = document.querySelector('#overtimeTable tbody');
             tbody.innerHTML = '';
@@ -1312,380 +1363,307 @@ document.addEventListener('DOMContentLoaded', async () => {
                 tbody.appendChild(tr);
             });
         }
+
         function updateOvertimeStats(data) {
             const overtime = data.filter(d => d.extended_by_minutes > 0);
             const early = data.filter(d => d.extended_by_minutes < 0);
             const netMinutes = data.reduce((sum, d) => sum + d.extended_by_minutes, 0);
             const avgOvertime = overtime.length > 0 ?
                 Math.round(overtime.reduce((sum, d) => sum + d.extended_by_minutes, 0) / overtime.length) : 0;
-            const avgEarly = early.length > 0 ? 
-                Math.round(Math.abs(early.reduce((sum, d) => sum + d.extended_by_minutes, 0) / early.length)) : 0;
+
             document.getElementById('totalOvertime').textContent = overtime.length;
             document.getElementById('totalEarly').textContent = early.length;
-            // ✅ FIXED: Round net impact to 2 decimal places
             document.getElementById('netImpact').textContent = 
                 netMinutes > 0 ? `+${netMinutes.toFixed(2)}` : netMinutes.toFixed(2);
+            document.getElementById('avgOvertime').textContent = avgOvertime;
         }
-        async function loadDashboardData() {
-  try {
-    const dateRange = document.getElementById('dateRange')?.value || '30';
-    const eventType = document.getElementById('eventTypeFilter')?.value || 'all';
-    const params = new URLSearchParams({ range: dateRange, type: eventType });
-    // ✅ Use authFetch for auth
-    const response = await authFetch(`${API_BASE}/reports/statistics?${params}`);
-    if (!response.ok) throw new Error('Failed to fetch statistics');
-    const data = await response.json();
-    // ✅ Store globally
-    currentData = data;
-    // ✅ Update UI
-    updateStatistics(data.statistics);
-    updateCharts(data);
-    showMessage('Dashboard updated successfully', 'success');
-  } catch (error) {
-    console.error('Failed to load dashboard data:', error);
-    showMessage(`Failed to load dashboard: ${error.message}`, 'error');
-  }
-}
-document.addEventListener('DOMContentLoaded', async () => {
-  if (!AuthService.isAuthenticated()) {
-    window.location.href = 'login.html';
-    return;
-  }
-  if (!AuthService.hasRole('viewer')) {
-    showMessage("You don't have permission to view reports", 'error');
-    window.location.href = 'index.html';
-    return;
-  }
-  // ✅ Load dashboard data
-  await loadDashboardData();
-  // ✅ Set up auto-refresh
-  setInterval(loadDashboardData, 5 * 60 * 1000);
-  // ✅ Set up tab switching
-  setupTabs(); // ← Add this!
-  setupTabSwitching();
-  // ✅ Load dashboard data
-  await loadDashboardData();
-  // ✅ Set up auto-refresh
-  setInterval(loadDashboardData, 5 * 60 * 1000);
-  // ✅ Load other tabs on demand
-  document.querySelector('[data-tab="attendance"]').addEventListener('click', loadAttendanceData);
-  document.querySelector('[data-tab="overtime"]').addEventListener('click', loadOvertimeData);
-});
-function setupTabSwitching() {
-  document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      tab.classList.add('active');
-      const tabId = tab.getAttribute('data-tab');
-      document.getElementById(`${tabId}-tab`).classList.add('active');
-      if (tabId === 'overtime') loadOvertimeData();
-      if (tabId === 'attendance') loadAttendanceData();
-    });
-  });
-}
+
         async function exportToPDF() {
-  try {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4');
-    const pageWidth = doc.internal.pageSize.width;
-    const margin = 15;
-    let y = 20;
-    // Title
-    doc.setFontSize(20);
-    doc.setTextColor(67, 97, 238);
-    doc.text('Church Planner - Analytics Report', margin, y);
-    y += 15;
-    // Date Range
-    const dateRange = document.getElementById('dateRange')?.value || '30';
-    doc.setFontSize(12);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Report Period: ${dateRange === 'all' ? 'All Time' : `Last ${dateRange} Days`}`, margin, y);
-    y += 15;
-    // Stats
-    doc.setFontSize(14);
-    doc.setTextColor(0, 0, 0);
-    doc.text('Dashboard Summary', margin, y);
-    y += 10;
-    doc.setFontSize(12);
-    const totalEvents = document.getElementById('totalEvents').textContent;
-    const totalAttendance = document.getElementById('totalAttendance').textContent;
-    const avgAttendance = document.getElementById('avgAttendance').textContent;
-    const avgDuration = document.getElementById('avgDuration').textContent;
-    doc.text(`Total Events: ${totalEvents}`, margin, y); y += 8;
-    doc.text(`Total Attendance: ${totalAttendance}`, margin, y); y += 8;
-    doc.text(`Average Attendance: ${avgAttendance}`, margin, y); y += 8;
-    doc.text(`Average Duration: ${avgDuration} min`, margin, y); y += 15;
-    // Add Charts
-    const chart1 = document.getElementById('attendanceChart');
-    const chart2 = document.getElementById('eventTypesChart');
-    const charts = [chart1, chart2];
-    for (const chart of charts) {
-      if (chart && y + 90 < 280) {
-        const imgData = chart.toDataURL('image/png', 1.0);
-        const imgWidth = pageWidth - 2 * margin;
-        const imgHeight = 80;
-        doc.addImage(imgData, 'PNG', margin, y, imgWidth, imgHeight);
-        y += imgHeight + 10;
-      } else {
-        doc.addPage();
-        y = 20;
-      }
-    }
-    // Save PDF
-    const filename = `church-analytics-report-${dateRange}-${new Date().toISOString().split('T')[0]}.pdf`;
-    doc.save(filename);
-    showMessage('PDF exported successfully!', 'success');
-  } catch (error) {
-    console.error('PDF Export Error:', error);
-    showMessage(`PDF export failed: ${error.message}`, 'error');
-  }
-}
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'mm', 'a4');
+                const pageWidth = doc.internal.pageSize.width;
+                const margin = 15;
+                let y = 20;
+                doc.setFontSize(20);
+                doc.setTextColor(67, 97, 238);
+                doc.text('Church Planner - Analytics Report', margin, y);
+                y += 15;
+                const month = document.getElementById('overviewMonthFilter')?.value || 'all';
+                const year = document.getElementById('overviewYearFilter')?.value || new Date().getFullYear();
+                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                const period = month === 'all' ? 'All Months' : `${monthNames[month]} ${year}`;
+                doc.setFontSize(12);
+                doc.setTextColor(100, 100, 100);
+                doc.text(`Report Period: ${period}`, margin, y);
+                y += 15;
+                doc.setFontSize(14);
+                doc.setTextColor(0, 0, 0);
+                doc.text('Dashboard Summary', margin, y);
+                y += 10;
+                doc.setFontSize(12);
+                const totalEvents = document.getElementById('totalEvents').textContent;
+                const totalAttendance = document.getElementById('totalAttendance').textContent;
+                const avgAttendance = document.getElementById('avgAttendance').textContent;
+                const avgDuration = document.getElementById('avgDuration').textContent;
+                doc.text(`Total Events: ${totalEvents}`, margin, y); y += 8;
+                doc.text(`Total Attendance: ${totalAttendance}`, margin, y); y += 8;
+                doc.text(`Average Attendance: ${avgAttendance}`, margin, y); y += 8;
+                doc.text(`Average Duration: ${avgDuration} min`, margin, y); y += 15;
+                const chart1 = document.getElementById('attendanceChart');
+                const chart2 = document.getElementById('eventTypesChart');
+                const charts = [chart1, chart2];
+                for (const chart of charts) {
+                    if (chart && y + 90 < 280) {
+                        const imgData = chart.toDataURL('image/png', 1.0);
+                        const imgWidth = pageWidth - 2 * margin;
+                        const imgHeight = 80;
+                        doc.addImage(imgData, 'PNG', margin, y, imgWidth, imgHeight);
+                        y += imgHeight + 10;
+                    } else {
+                        doc.addPage();
+                        y = 20;
+                    }
+                }
+                const filename = `church-analytics-report-${year}-${month}-${new Date().toISOString().split('T')[0]}.pdf`;
+                doc.save(filename);
+                showMessage('PDF exported successfully!', 'success');
+            } catch (error) {
+                console.error('PDF Export Error:', error);
+                showMessage(`PDF export failed: ${error.message}`, 'error');
+            }
+        }
+
         async function exportToExcel() {
-  try {
-    showMessage('Generating Excel file...', 'info');
-    const dateRange = document.getElementById('dateRange')?.value || '30';
-    const eventType = document.getElementById('eventTypeFilter')?.value || 'all';
-    const params = new URLSearchParams({ range: dateRange, type: eventType });
-    const response = await authFetch(`${API_BASE}/reports/export/events?${params}`);
-    // ✅ Check if response is OK
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`HTTP ${response.status}: ${text.substring(0, 100)}...`);
-    }
-    // ✅ Check content type before parsing
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      throw new Error(`Expected JSON, got ${contentType}: ${text.substring(0, 100)}...`);
-    }
-    const eventsData = await response.json();
-    if (eventsData.length === 0) {
-      showMessage('No event data to export', 'warning');
-      return;
-    }
-    // Create workbook
-    const wb = XLSX.utils.book_new();
-    // Add Events sheet
-    const ws = XLSX.utils.json_to_sheet(eventsData);
-    XLSX.utils.book_append_sheet(wb, ws, 'Events');
-    // Save file
-    const filename = `church-events-export-${dateRange}-${new Date().toISOString().split('T')[0]}.xlsx`;
-    XLSX.writeFile(wb, filename);
-    showMessage('Events exported to Excel successfully!', 'success');
-  } catch (error) {
-    console.error('Excel export error:', error);
-    showMessage(`Export failed: ${error.message}`, 'error');
-  }
-}
+            try {
+                showMessage('Generating Excel file...', 'info');
+                const month = document.getElementById('overviewMonthFilter')?.value || 'all';
+                const year = document.getElementById('overviewYearFilter')?.value || new Date().getFullYear();
+                const eventType = document.getElementById('eventTypeFilter')?.value || 'all';
+                const params = new URLSearchParams({ month: month, year: year, type: eventType });
+                const response = await authFetch(`${API_BASE}/reports/export/events?${params}`);
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${text.substring(0, 100)}...`);
+                }
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    throw new Error(`Expected JSON, got ${contentType}: ${text.substring(0, 100)}...`);
+                }
+                const eventsData = await response.json();
+                if (eventsData.length === 0) {
+                    showMessage('No event data to export', 'warning');
+                    return;
+                }
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.json_to_sheet(eventsData);
+                XLSX.utils.book_append_sheet(wb, ws, 'Events');
+                const filename = `church-events-export-${year}-${month}-${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, filename);
+                showMessage('Events exported to Excel successfully!', 'success');
+            } catch (error) {
+                console.error('Excel export error:', error);
+                showMessage(`Export failed: ${error.message}`, 'error');
+            }
+        }
+
         async function exportAttendanceToExcel() {
-  try {
-    const dateRange = document.getElementById('dateRange')?.value || '30';
-    const params = new URLSearchParams({ range: dateRange });
-    const response = await authFetch(`${API_BASE}/reports/export/attendance?${params}`);
-    const data = await response.json();
-    if (data.length === 0) {
-      showMessage('No attendance data to export', 'warning');
-      return;
-    }
-    const exportData = data.map(item => ({
-      'Event': item.event_title,
-      'Activity': item.activity_title,
-      'Date': item.event_date,
-      'Attendance': item.attendance_count,
-      'Recorded By': item.recorded_by,
-      'Recorded At': item.recorded_at
-    }));
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
-    const filename = `attendance-export-${dateRange}-${new Date().toISOString().split('T')[0]}.xlsx`;
-    XLSX.writeFile(wb, filename);
-    showMessage('Attendance exported to Excel!', 'success');
-  } catch (error) {
-    console.error('Attendance Export Error:', error);
-    showMessage(`Export failed: ${error.message}`, 'error');
-  }
-}
-    // Export to Excel
-async function exportOvertimeToExcel() {
-  try {
-    if (!overtimeData || overtimeData.length === 0) {
-      await loadOvertimeData(); // Load if not already loaded
-    }
-    if (overtimeData.length === 0) {
-      showMessage('No overtime data available to export', 'warning');
-      return;
-    }
-    const exportData = overtimeData.map(item => ({
-      'Activity': item.activity_title,
-      'Event': item.event_title,
-      'Date': item.event_date,
-      'Preacher': item.preacher,
-      'Scheduled (min)': item.scheduled_duration,
-      'Actual (min)': item.actual_duration,
-      'Delta (min)': item.duration_delta,
-      'Status': item.status
-    }));
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Overtime & Early Ends');
-    const range = document.getElementById('overtimeDateRange')?.value || '30';
-    const filename = `overtime-export-${range}-${new Date().toISOString().split('T')[0]}.xlsx`;
-    XLSX.writeFile(wb, filename);
-    showMessage('Overtime data exported to Excel!', 'success');
-  } catch (error) {
-    console.error('Overtime Excel Export Error:', error);
-    showMessage(`Export failed: ${error.message}`, 'error');
-  }
-}
-async function exportToPrintablePDF() {
-  try {
-    showMessage('Generating printable report...', 'info');
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4'); // portrait
-    const pageWidth = doc.internal.pageSize.width;
-    const margin = 15;
-    let y = 20;
-    // Title
-    doc.setFontSize(20);
-    doc.setTextColor(67, 97, 238);
-    doc.text('Overtime & Early Ends Report', margin, y);
-    y += 15;
-    // Date Range
-    const range = document.getElementById('overtimeDateRange')?.value || '30';
-    doc.setFontSize(12);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Report Period: ${range === 'all' ? 'All Time' : `Last ${range} Days`}`, margin, y);
-    y += 15;
-    // Stats - Only if elements exist
-    doc.setFontSize(14);
-    doc.setTextColor(0, 0, 0);
-    doc.text('Summary Statistics', margin, y);
-    y += 10;
-    const totalOvertimeEl = document.getElementById('totalOvertime');
-    const totalEarlyEl = document.getElementById('totalEarly');
-    const avgOvertimeEl = document.getElementById('avgOvertime');
-    const avgEarlyEl = document.getElementById('avgEarly');
-    doc.setFontSize(12);
-    if (totalOvertimeEl) {
-      doc.text(`Overtime Activities: ${totalOvertimeEl.textContent}`, margin, y); y += 8;
-    }
-    if (totalEarlyEl) {
-      doc.text(`Ended Early: ${totalEarlyEl.textContent}`, margin, y); y += 8;
-    }
-    if (avgOvertimeEl) {
-      doc.text(`Avg Overtime: ${avgOvertimeEl.textContent} min`, margin, y); y += 8;
-    }
-    if (avgEarlyEl) {
-      doc.text(`Avg Early: ${avgEarlyEl.textContent} min`, margin, y); y += 15;
-    } else {
-      y += 15;
-    }
-    // Add Chart (if it exists)
-    const chartCanvas = document.getElementById('preacherVarianceChart');
-    if (chartCanvas) {
-      const imgData = chartCanvas.toDataURL('image/png', 1.0);
-      const imgWidth = pageWidth - 2 * margin;
-      const imgHeight = (chartCanvas.height * imgWidth) / chartCanvas.width;
-      if (y + imgHeight > 280) {
-        doc.addPage();
-        y = 20;
-      }
-      doc.addImage(imgData, 'PNG', margin, y, imgWidth, imgHeight);
-    }
-    // Add Table
-    const table = document.getElementById('overtimeTable');
-    if (!table) {
-      showMessage('No data to print', 'error');
-      return;
-    }
-    await html2canvas(table, {
-      backgroundColor: '#ffffff',
-      scale: 2,
-      useCORS: true
-    }).then(canvas => {
-      const imgData = canvas.toDataURL('image/png');
-      const imgWidth = pageWidth - 2 * margin;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      if (y + imgHeight > 280) {
-        doc.addPage();
-        y = 20;
-      }
-      doc.addImage(imgData, 'PNG', margin, y, imgWidth, imgHeight);
-    });
-    // Save PDF
-    const filename = `overtime-report-printable-${range}-${new Date().toISOString().split('T')[0]}.pdf`;
-    doc.save(filename);
-    showMessage('Printable report generated successfully!', 'success');
-  } catch (error) {
-    console.error('Print PDF error:', error);
-    showMessage(`Print export failed: ${error.message}`, 'error');
-  }
-}
-function setupFilterListeners() {
-  const dateRange = document.getElementById('dateRange');
-  const eventTypeFilter = document.getElementById('eventTypeFilter');
-  // ✅ Refresh when either filter changes
-  dateRange.addEventListener('change', refreshData);
-  eventTypeFilter.addEventListener('change', refreshData);
-}
-// Call this in DOMContentLoaded
-document.addEventListener('DOMContentLoaded', async () => {
-  // ... auth checks ...
-  setupTabs();
-  setupFilterListeners(); // ← Add this!
-  await initializeDashboard();
-});
-function showMessage(message, type = 'info') {
-    const msgDiv = document.getElementById('message');
-    if (!msgDiv) return;
-    msgDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
-    setTimeout(hideMessage, 5000);
-}
-function hideMessage() {
-    const msgDiv = document.getElementById('message');
-    if (msgDiv) msgDiv.innerHTML = '';
-}
-function refreshData() {
-    loadDashboardData();
-}
-window.exportToPDF = exportToPDF;
+            try {
+                const month = document.getElementById('overviewMonthFilter')?.value || 'all';
+                const year = document.getElementById('overviewYearFilter')?.value || new Date().getFullYear();
+                const params = new URLSearchParams({ month: month, year: year });
+                const response = await authFetch(`${API_BASE}/reports/export/attendance?${params}`);
+                const data = await response.json();
+                if (data.length === 0) {
+                    showMessage('No attendance data to export', 'warning');
+                    return;
+                }
+                const exportData = data.map(item => ({
+                    'Event': item.event_title,
+                    'Activity': item.activity_title,
+                    'Date': item.event_date,
+                    'Attendance': item.attendance_count,
+                    'Recorded By': item.recorded_by,
+                    'Recorded At': item.recorded_at
+                }));
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
+                const filename = `attendance-export-${year}-${month}-${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, filename);
+                showMessage('Attendance exported to Excel!', 'success');
+            } catch (error) {
+                console.error('Attendance Export Error:', error);
+                showMessage(`Export failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function exportOvertimeToExcel() {
+            try {
+                if (!overtimeData || overtimeData.length === 0) {
+                    await loadOvertimeData();
+                }
+                if (overtimeData.length === 0) {
+                    showMessage('No overtime data available to export', 'warning');
+                    return;
+                }
+                const exportData = overtimeData.map(item => ({
+                    'Activity': item.activity_title,
+                    'Event': item.event_title,
+                    'Date': item.event_date,
+                    'Preacher': item.preacher,
+                    'Scheduled (min)': item.scheduled_duration,
+                    'Actual (min)': item.actual_duration,
+                    'Delta (min)': item.duration_delta,
+                    'Status': item.status
+                }));
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Overtime & Early Ends');
+                const month = document.getElementById('overtimeMonthFilter')?.value || 'all';
+                const year = document.getElementById('overtimeYearFilter')?.value || new Date().getFullYear();
+                const filename = `overtime-export-${year}-${month}-${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, filename);
+                showMessage('Overtime data exported to Excel!', 'success');
+            } catch (error) {
+                console.error('Overtime Excel Export Error:', error);
+                showMessage(`Export failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function exportToPrintablePDF() {
+            try {
+                showMessage('Generating printable report...', 'info');
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'mm', 'a4');
+                const pageWidth = doc.internal.pageSize.width;
+                const margin = 15;
+                let y = 20;
+                doc.setFontSize(20);
+                doc.setTextColor(67, 97, 238);
+                doc.text('Overtime & Early Ends Report', margin, y);
+                y += 15;
+                const month = document.getElementById('overtimeMonthFilter')?.value || 'all';
+                const year = document.getElementById('overtimeYearFilter')?.value || new Date().getFullYear();
+                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                const period = month === 'all' ? 'All Months' : `${monthNames[month]} ${year}`;
+                doc.setFontSize(12);
+                doc.setTextColor(100, 100, 100);
+                doc.text(`Report Period: ${period}`, margin, y);
+                y += 15;
+                doc.setFontSize(14);
+                doc.setTextColor(0, 0, 0);
+                doc.text('Summary Statistics', margin, y);
+                y += 10;
+                const totalOvertimeEl = document.getElementById('totalOvertime');
+                const totalEarlyEl = document.getElementById('totalEarly');
+                const avgOvertimeEl = document.getElementById('avgOvertime');
+                doc.setFontSize(12);
+                if (totalOvertimeEl) {
+                    doc.text(`Overtime Activities: ${totalOvertimeEl.textContent}`, margin, y); y += 8;
+                }
+                if (totalEarlyEl) {
+                    doc.text(`Ended Early: ${totalEarlyEl.textContent}`, margin, y); y += 8;
+                }
+                if (avgOvertimeEl) {
+                    doc.text(`Avg Overtime: ${avgOvertimeEl.textContent} min`, margin, y); y += 8;
+                } else {
+                    y += 8;
+                }
+                const table = document.getElementById('overtimeTable');
+                if (!table) {
+                    showMessage('No data to print', 'error');
+                    return;
+                }
+                await html2canvas(table, {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    useCORS: true
+                }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const imgWidth = pageWidth - 2 * margin;
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    if (y + imgHeight > 280) {
+                        doc.addPage();
+                        y = 20;
+                    }
+                    doc.addImage(imgData, 'PNG', margin, y, imgWidth, imgHeight);
+                });
+                const filename = `overtime-report-printable-${year}-${month}-${new Date().toISOString().split('T')[0]}.pdf`;
+                doc.save(filename);
+                showMessage('Printable report generated successfully!', 'success');
+            } catch (error) {
+                console.error('Print PDF error:', error);
+                showMessage(`Print export failed: ${error.message}`, 'error');
+            }
+        }
+
+        function refreshData() {
+            loadDashboardData();
+        }
+
+        async function saveAttendance(eventId) {
+            try {
+                const input = document.getElementById(`attendance-${eventId}`);
+                const count = parseInt(input.value, 10);
+                if (isNaN(count) || count < 0) {
+                    showMessage('Please enter a valid attendance count.', 'error');
+                    return;
+                }
+                const token = localStorage.getItem('accessToken');
+                const response = await fetch(`${API_BASE}/events/${eventId}/attendance`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ count })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showMessage(result.message || 'Attendance saved!', 'success');
+                    await loadAttendanceData();
+                } else {
+                    showMessage(result.error || 'Failed to save attendance.', 'error');
+                }
+            } catch (error) {
+                showMessage('Network error: ' + error.message, 'error');
+            }
+        }
+
+        // Make functions globally available
+        window.exportToPDF = exportToPDF;
         window.exportToExcel = exportToExcel;
         window.exportAttendanceToExcel = exportAttendanceToExcel;
+        window.exportOvertimeToExcel = exportOvertimeToExcel;
         window.loadOvertimeData = loadOvertimeData;
         window.loadAttendanceData = loadAttendanceData;
-        async function saveAttendance(eventId) {
-    try {
-        const input = document.getElementById(`attendance-${eventId}`);
-        const count = parseInt(input.value, 10);
-        if (isNaN(count) || count < 0) {
-            showMessage('Please enter a valid attendance count.', 'error');
-            return;
-        }
-        const token = localStorage.getItem('accessToken');
-        const response = await fetch(`${API_BASE}/events/${eventId}/attendance`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ count })
+        window.saveAttendance = saveAttendance;
+        window.refreshData = refreshData;
+
+        // Initialize on DOM load
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!AuthService.isAuthenticated()) {
+                window.location.href = 'login.html';
+                return;
+            }
+            if (!AuthService.hasRole('viewer')) {
+                showMessage("You don't have permission to view reports", 'error');
+                window.location.href = 'index.html';
+                return;
+            }
+            const user = AuthService.getCurrentUser();
+            if (user) {
+                const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                document.getElementById('userAvatar').textContent = initials;
+            }
+            setupEventListeners();
+            setupMobileMenu();
+            setupTabs();
+            await initializeDashboard();
+            setInterval(loadDashboardData, 5 * 60 * 1000);
         });
-        const result = await response.json();
-        if (response.ok) {
-            showMessage(result.message || 'Attendance saved!', 'success');
-            // Optionally refresh attendance data to update status badge
-            await loadAttendanceData();
-        } else {
-            showMessage(result.error || 'Failed to save attendance.', 'error');
-        }
-    } catch (error) {
-        showMessage('Network error: ' + error.message, 'error');
-    }
-}
-// Make sure this is available globally for onclick in HTML
-window.saveAttendance = saveAttendance;
-</script>
+    </script>
 </body>
 </html>

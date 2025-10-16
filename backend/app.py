@@ -2222,19 +2222,46 @@ def get_event_attendance(current_user, event_id):
 @token_required('viewer')
 def get_statistics(current_user):
     try:
-        date_range = request.args.get('range', '30')
+        # Get query parameters
+        month_param = request.args.get('month')
+        year_param = request.args.get('year')
         event_type = request.args.get('type', 'all')
+
         cur = mysql.connection.cursor()
-        date_filter = ""
         params = []
-        if date_range != 'all':
-            days = int(date_range)
-            date_filter = "AND e.event_date >= DATE_SUB(CURDATE(), INTERVAL %s DAY)"
-            params.append(days)
+        date_filter = ""
+
+        if month_param is not None and year_param is not None:
+            # Calendar-based filtering (new)
+            try:
+                year = int(year_param)
+                if month_param == 'all':
+                    # All months in the given year
+                    date_filter = "AND YEAR(e.event_date) = %s"
+                    params.append(year)
+                else:
+                    month = int(month_param)
+                    if not (0 <= month <= 11):
+                        raise ValueError("Month must be 0–11")
+                    # MySQL MONTH() is 1-based → add 1
+                    date_filter = "AND YEAR(e.event_date) = %s AND MONTH(e.event_date) = %s"
+                    params.extend([year, month + 1])
+            except (ValueError, TypeError) as e:
+                return jsonify({"error": f"Invalid month or year: {str(e)}"}), 400
+        else:
+            # Fallback to range-based (old)
+            date_range = request.args.get('range', '30')
+            if date_range != 'all':
+                days = int(date_range)
+                date_filter = "AND e.event_date >= DATE_SUB(CURDATE(), INTERVAL %s DAY)"
+                params.append(days)
+
         type_filter = ""
         if event_type != 'all':
             type_filter = "AND et.name = %s"
             params.append(event_type)
+
+        # --- Statistics ---
         cur.execute(f"""
             SELECT 
                 COUNT(DISTINCT e.id) as total_events,
@@ -2248,6 +2275,8 @@ def get_statistics(current_user):
             WHERE 1=1 {date_filter} {type_filter}
         """, params)
         stats = cur.fetchone()
+
+        # --- Trends (last 30 days for chart consistency) ---
         cur.execute("""
             SELECT 
                 DATE(e.event_date) as date,
@@ -2259,13 +2288,9 @@ def get_statistics(current_user):
             GROUP BY DATE(e.event_date)
             ORDER BY date ASC
         """)
-        trends = []
-        for row in cur.fetchall():
-            trends.append({
-                "date": str(row[0]),
-                "attendance": row[1],
-                "event_count": row[2]
-            })
+        trends = [{"date": str(r[0]), "attendance": r[1], "event_count": r[2]} for r in cur.fetchall()]
+
+        # --- Event Types Breakdown ---
         cur.execute(f"""
             SELECT 
                 et.name as event_type,
@@ -2279,14 +2304,15 @@ def get_statistics(current_user):
             GROUP BY et.id, et.name
             ORDER BY total_attendance DESC
         """, params)
-        event_types = []
-        for row in cur.fetchall():
-            event_types.append({
-                "event_type": row[0],
-                "event_count": row[1],
-                "total_attendance": row[2],
-                "avg_attendance": round(row[3], 1) if row[3] else 0
-            })
+        event_types = [
+            {
+                "event_type": r[0],
+                "event_count": r[1],
+                "total_attendance": r[2],
+                "avg_attendance": round(r[3], 1) if r[3] else 0
+            } for r in cur.fetchall()
+        ]
+
         cur.close()
         return jsonify({
             "statistics": {
@@ -2387,35 +2413,57 @@ def get_upcoming_events_for_attendance(current_user):
 @token_required('viewer')
 def get_overtime_activities(current_user):
     try:
-        date_range = request.args.get('range', '30')
+        month_param = request.args.get('month')
+        year_param = request.args.get('year')
+
         cur = mysql.connection.cursor()
-        date_filter = ""
         params = []
-        if date_range != 'all':
-            days = int(date_range)
-            date_filter = "AND a.timestamp >= DATE_SUB(CURDATE(), INTERVAL %s DAY)"
-            params.append(days)
+        date_filter = ""
+
+        if month_param is not None and year_param is not None:
+            # Calendar-based filtering
+            try:
+                year = int(year_param)
+                if month_param == 'all':
+                    date_filter = "AND YEAR(e.event_date) = %s"
+                    params.append(year)
+                else:
+                    month = int(month_param)
+                    if not (0 <= month <= 11):
+                        raise ValueError("Month must be 0–11")
+                    date_filter = "AND YEAR(e.event_date) = %s AND MONTH(e.event_date) = %s"
+                    params.extend([year, month + 1])
+            except (ValueError, TypeError) as e:
+                return jsonify({"error": f"Invalid month or year: {str(e)}"}), 400
+        else:
+            # Fallback to range
+            date_range = request.args.get('range', '30')
+            if date_range != 'all':
+                days = int(date_range)
+                date_filter = "AND a.timestamp >= DATE_SUB(CURDATE(), INTERVAL %s DAY)"
+                params.append(days)
+
         query = f"""
-SELECT 
-    b.title as activity_title,
-    e.title as event_title,
-    et.name as event_type,
-    e.event_date,
-    b.preacher as preacher_name,
-    a.new_data,
-    a.action_type
-FROM audit_logs a
-JOIN bulletins b ON a.entity_id = b.id
-JOIN events e ON b.event_id = e.id
-JOIN event_types et ON e.event_type_id = et.id
-LEFT JOIN users u ON b.preacher = u.id
-WHERE a.action_type IN ('OVERTIME', 'ENDED_EARLY')
-  {date_filter}
-ORDER BY a.timestamp DESC
-"""
+            SELECT 
+                b.title as activity_title,
+                e.title as event_title,
+                et.name as event_type,
+                e.event_date,
+                b.preacher as preacher_name,
+                a.new_data,
+                a.action_type
+            FROM audit_logs a
+            JOIN bulletins b ON a.entity_id = b.id
+            JOIN events e ON b.event_id = e.id
+            JOIN event_types et ON e.event_type_id = et.id
+            WHERE a.action_type IN ('OVERTIME', 'ENDED_EARLY')
+              {date_filter}
+            ORDER BY a.timestamp DESC
+        """
         cur.execute(query, params)
         results = cur.fetchall()
         cur.close()
+
         activities = []
         for row in results:
             new_data = json.loads(row[5]) if row[5] else {}
