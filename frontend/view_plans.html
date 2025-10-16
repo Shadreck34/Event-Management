@@ -6,43 +6,43 @@
   <title>View Plans - Church Planner</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-   <link rel="stylesheet" href="stylenew.css">
+  <link rel="stylesheet" href="stylenew.css">
   <link rel="stylesheet" href="view.css">
 </head>
 <script src="auth.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-    // Check authentication
-    if (!AuthService.isAuthenticated()) {
-        window.location.href = 'login.html';
-        return;
-    }
+        // Check authentication
+        if (!AuthService.isAuthenticated()) {
+            window.location.href = 'login.html';
+            return;
+        }
 
-    // Check if user has at least viewer role
-    if (!AuthService.hasRole('viewer')) {
-        showError("You don't have permission to view plans");
-        window.location.href = 'index.html';
-        return;
-    }
+        // Check if user has at least viewer role
+        if (!AuthService.hasRole('viewer')) {
+            showError("You don't have permission to view plans");
+            window.location.href = 'index.html';
+            return;
+        }
 
-    // Display current user info
-    const user = AuthService.getCurrentUser();
-    if (user && document.getElementById('userName')) {
-        document.getElementById('userName').textContent = user.name || user.email;
-    }
+        // Display current user info
+        const user = AuthService.getCurrentUser();
+        if (user && document.getElementById('userName')) {
+            document.getElementById('userName').textContent = user.name || user.email;
+        }
 
-    // Set up logout button
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-            AuthService.logout();
-        });
-    }
+        // Set up logout button
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                AuthService.logout();
+            });
+        }
 
-    // Initialize page
-    initializeFilters();
-    loadEvents();
-});
+        // Initialize page
+        initializeFilters();
+        loadEvents();
+    });
 </script>
 <body>
    <div class="dashboard">
@@ -54,7 +54,7 @@
 <!-- Sidebar -->
 <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <h2><i class="fas fa-clock"></i> Smart Clock</h2>
+        <h2><i class="fas fa-clock"></i> Event Scheduler </h2>
     </div>
     <div class="nav-menu">
         <div class="nav-item">
@@ -100,17 +100,31 @@
       <!-- Enhanced Filters with Auto-Apply -->
       <div class="filters">
         <div class="filter-group">
-          <label for="timeFilter">
-            <i class="fas fa-clock"></i> Time Period
+          <label for="monthFilter">
+            <i class="fas fa-calendar"></i> Month
           </label>
-          <select id="timeFilter" class="form-control always-enabled">
-            <option value="upcoming">All Upcoming Events</option>
-            <option value="past">Past Events</option>
-            <option value="today">Today</option>
-            <option value="week">This Week</option>
-            <option value="nextweek">Next Week</option>
-            <option value="month">This Month</option>
-            <option value="nextmonth">Next Month</option>
+          <select id="monthFilter" class="form-control always-enabled">
+            <option value="all">All Months</option>
+            <option value="0">January</option>
+            <option value="1">February</option>
+            <option value="2">March</option>
+            <option value="3">April</option>
+            <option value="4">May</option>
+            <option value="5">June</option>
+            <option value="6">July</option>
+            <option value="7">August</option>
+            <option value="8">September</option>
+            <option value="9">October</option>
+            <option value="10">November</option>
+            <option value="11">December</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="yearFilter">
+            <i class="fas fa-calendar-day"></i> Year
+          </label>
+          <select id="yearFilter" class="form-control always-enabled">
+            <!-- Populated dynamically -->
           </select>
         </div>
         <div class="filter-group">
@@ -220,7 +234,8 @@
     // Global variables
     let allEvents = [];
     let currentFilters = {
-      time: 'upcoming',
+      month: 'all',
+      year: new Date().getFullYear().toString(),
       type: 'all',
       location: 'all',
       search: ''
@@ -287,16 +302,32 @@
 
     // Initialize filters with auto-apply functionality
     function initializeFilters() {
-      const timeFilter = document.getElementById('timeFilter');
+      const monthFilter = document.getElementById('monthFilter');
+      const yearFilter = document.getElementById('yearFilter');
       const typeFilter = document.getElementById('typeFilter');
       const locationFilter = document.getElementById('locationFilter');
       const searchFilter = document.getElementById('searchFilter');
       const clearFilters = document.getElementById('clearFilters');
       const refreshEvents = document.getElementById('refreshEvents');
 
+      // Populate year filter (current year ±2 years)
+      const currentYear = new Date().getFullYear();
+      for (let year = currentYear - 2; year <= currentYear + 2; year++) {
+        const option = document.createElement('option');
+        option.value = year.toString();
+        option.textContent = year;
+        if (year === currentYear) option.selected = true;
+        yearFilter.appendChild(option);
+      }
+
       // Auto-apply filters when they change
-      timeFilter.addEventListener('change', (e) => {
-        currentFilters.time = e.target.value;
+      monthFilter.addEventListener('change', (e) => {
+        currentFilters.month = e.target.value;
+        applyFilters();
+      });
+
+      yearFilter.addEventListener('change', (e) => {
+        currentFilters.year = e.target.value;
         applyFilters();
       });
 
@@ -327,13 +358,15 @@
 
       // Clear all filters
       clearFilters.addEventListener('click', () => {
-        timeFilter.value = 'upcoming';
+        monthFilter.value = 'all';
+        yearFilter.value = currentYear.toString();
         typeFilter.value = 'all';
         locationFilter.value = 'all';
         searchFilter.value = '';
         
         currentFilters = {
-          time: 'upcoming',
+          month: 'all',
+          year: currentYear.toString(),
           type: 'all',
           location: 'all',
           search: ''
@@ -349,7 +382,6 @@
 
       // Load event types for filter
       loadEventTypes();
-      loadLocations();
     }
 
     // Load event types for the filter dropdown
@@ -375,43 +407,26 @@
       }
     }
 
-    // Load locations for the filter dropdown
-    async function loadLocations() {
-      try {
-        const events = await apiCall(`${API_BASE}/events`);
-        const locationFilter = document.getElementById('locationFilter');
-        
-        // Get unique locations
-        const locations = [...new Set(events.map(event => {
-            // Extract location from event data
-            let location = null;
-            if (Array.isArray(event)) {
-                // If event is an array, location is at index 6 (based on backend SELECT order)
-                location = event[6];
-            } else if (event && typeof event === 'object') {
-                // If event is an object, use the location property
-                location = event.location;
-            }
-            return location || 'Unassigned Room';
-        }))];
-        
-        allLocations = locations;
-        
-        // Clear existing options except "All Locations"
-        while (locationFilter.children.length > 1) {
-          locationFilter.removeChild(locationFilter.lastChild);
-        }
-        
-        // Add locations
-        locations.forEach(location => {
-          const option = document.createElement('option');
-          option.value = location;
-          option.textContent = location;
-          locationFilter.appendChild(option);
-        });
-      } catch (error) {
-        console.error('Failed to load locations:', error);
+    // Load locations from allEvents (called after events are loaded)
+    function loadLocationsFromEvents(events) {
+      const locationFilter = document.getElementById('locationFilter');
+      
+      // Get unique locations
+      const locations = [...new Set(events.map(event => event.location || 'Unassigned Room'))];
+      allLocations = locations;
+      
+      // Clear existing options except "All Locations"
+      while (locationFilter.children.length > 1) {
+        locationFilter.removeChild(locationFilter.lastChild);
       }
+      
+      // Add locations
+      locations.forEach(location => {
+        const option = document.createElement('option');
+        option.value = location;
+        option.textContent = location;
+        locationFilter.appendChild(option);
+      });
     }
 
     // Load events from API
@@ -426,23 +441,19 @@
         // Fetch events from API
         const events = await apiCall(`${API_BASE}/events`);
         
-        // Process events with date information
+        // Process events with date information (timezone-safe)
         allEvents = events.map(event => {
-          // Extract event data based on format (object or array)
           let eventId, title, eventDate, startTime, endTime, eventType, location;
           
           if (Array.isArray(event)) {
-            // Handle array format (from backend SELECT)
-            // Based on the backend query: SELECT e.id, e.title, e.event_date, e.start_time, e.end_time, et.name as event_type, e.location
             eventId = event[0];
             title = event[1];
             eventDate = event[2];
             startTime = event[3];
             endTime = event[4];
             eventType = event[5];
-            location = event[6] || 'Unassigned Room'; // Location is at index 6
+            location = event[6] || 'Unassigned Room';
           } else {
-            // Handle object format
             eventId = event.id;
             title = event.title;
             eventDate = event.event_date;
@@ -452,30 +463,10 @@
             location = event.location || 'Unassigned Room';
           }
           
-          const dateObj = new Date(eventDate);
-          const now = new Date();
-          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          // Parse date as UTC to avoid timezone issues
+          const [y, m, d] = eventDate.split('-').map(n => parseInt(n, 10));
+          const dateObj = new Date(Date.UTC(y, m - 1, d));
           
-          // Calculate week boundaries (Sunday to Saturday)
-          const weekStart = new Date(today);
-          weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-          const weekEnd = new Date(weekStart);
-          weekEnd.setDate(weekEnd.getDate() + 6);
-          
-          // Calculate next week boundaries
-          const nextWeekStart = new Date(weekStart);
-          nextWeekStart.setDate(nextWeekStart.getDate() + 7);
-          const nextWeekEnd = new Date(nextWeekStart);
-          nextWeekEnd.setDate(nextWeekEnd.getDate() + 6);
-          
-          // Calculate month boundaries
-          const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-          const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-          
-          // Calculate next month boundaries
-          const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-          const nextMonthEnd = new Date(now.getFullYear(), now.getMonth() + 2, 0);
-
           return {
             id: eventId,
             title: title,
@@ -483,19 +474,15 @@
             start_time: startTime,
             end_time: endTime,
             event_type: eventType,
-            location: location, // This is now properly extracted from the database
+            location: location,
             dateObj: dateObj,
-            isPast: dateObj < today,
-            isToday: dateObj.toDateString() === today.toDateString(),
-            isThisWeek: dateObj >= weekStart && dateObj <= weekEnd,
-            isNextWeek: dateObj >= nextWeekStart && dateObj <= nextWeekEnd,
-            isThisMonth: dateObj >= monthStart && dateObj <= monthEnd,
-            isNextMonth: dateObj >= nextMonthStart && dateObj <= nextMonthEnd
+            month: dateObj.getUTCMonth(), // 0-11
+            year: dateObj.getUTCFullYear()
           };
         });
 
-        // Update locations filter
-        loadLocations();
+        // Update locations filter using loaded events
+        loadLocationsFromEvents(allEvents);
 
         // Apply current filters
         applyFilters();
@@ -516,28 +503,17 @@
 
       let filteredEvents = [...allEvents];
 
-      // Apply time period filter
-      switch(currentFilters.time) {
-        case 'past':
-          filteredEvents = filteredEvents.filter(e => e.isPast);
-          break;
-        case 'today':
-          filteredEvents = filteredEvents.filter(e => e.isToday);
-          break;
-        case 'week':
-          filteredEvents = filteredEvents.filter(e => e.isThisWeek);
-          break;
-        case 'nextweek':
-          filteredEvents = filteredEvents.filter(e => e.isNextWeek);
-          break;
-        case 'month':
-          filteredEvents = filteredEvents.filter(e => e.isThisMonth);
-          break;
-        case 'nextmonth':
-          filteredEvents = filteredEvents.filter(e => e.isNextMonth);
-          break;
-        default: // 'upcoming'
-          filteredEvents = filteredEvents.filter(e => !e.isPast);
+      // Apply month and year filter
+      if (currentFilters.month !== 'all') {
+        const selectedMonth = parseInt(currentFilters.month, 10);
+        const selectedYear = parseInt(currentFilters.year, 10);
+        filteredEvents = filteredEvents.filter(e => 
+          e.month === selectedMonth && e.year === selectedYear
+        );
+      } else {
+        // If month is "all", still filter by year
+        const selectedYear = parseInt(currentFilters.year, 10);
+        filteredEvents = filteredEvents.filter(e => e.year === selectedYear);
       }
 
       // Apply event type filter
@@ -582,119 +558,36 @@
         return;
       }
 
-      // Group events by category for better organization
-      const groupedEvents = {
-        today: [],
-        thisWeek: [],
-        nextWeek: [],
-        thisMonth: [],
-        nextMonth: [],
-        future: [],
-        past: []
-      };
-
+      // Render events (no grouping)
       events.forEach(event => {
-        if (event.isToday) {
-          groupedEvents.today.push(event);
-        } else if (event.isThisWeek) {
-          groupedEvents.thisWeek.push(event);
-        } else if (event.isNextWeek) {
-          groupedEvents.nextWeek.push(event);
-        } else if (event.isThisMonth) {
-          groupedEvents.thisMonth.push(event);
-        } else if (event.isNextMonth) {
-          groupedEvents.nextMonth.push(event);
-        } else if (event.isPast) {
-          groupedEvents.past.push(event);
-        } else {
-          groupedEvents.future.push(event);
-        }
+        const row = document.createElement('tr');
+        const eventDate = event.dateObj.toLocaleDateString();
+        
+        row.innerHTML = `
+          <td>${event.title}</td>
+          <td>${event.event_type}</td>
+          <td>
+            <span class="location-tag ${event.location === 'Unassigned Room' ? 'unassigned' : 'assigned'}">
+              <i class="fas fa-map-marker-alt"></i> ${event.location}
+            </span>
+          </td>
+          <td>${eventDate}</td>
+          <td class="time-display">${event.start_time}</td>
+          <td class="time-display">${event.end_time}</td>
+          <td class="action-buttons">
+            <button class="view-btn always-allowed" onclick="viewBulletin(${event.id}, '${event.title.replace(/'/g, "\\'")}', '${eventDate}', '${event.start_time}', '${event.end_time}', '${event.location.replace(/'/g, "\\'")}')">
+              <i class="fas fa-eye"></i> View
+            </button>
+            <button class="edit-btn" data-role-required="planner" onclick="editEvent(${event.id})">
+              <i class="fas fa-edit"></i> Edit
+            </button>
+            <button class="delete-btn" data-role-required="admin" onclick="deleteEvent(${event.id}, '${event.title.replace(/'/g, "\\\'")}')">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          </td>
+        `;
+        tbody.appendChild(row);
       });
-
-      // Helper function to render a group of events
-      const renderGroup = (groupEvents, title) => {
-        if (groupEvents.length === 0) return;
-        
-        // Add group header row (only if we have multiple groups)
-        const hasMultipleGroups = Object.values(groupedEvents).filter(arr => arr.length > 0).length > 1;
-        if (hasMultipleGroups) {
-          const headerRow = document.createElement('tr');
-          headerRow.className = 'group-header';
-          headerRow.innerHTML = `<td colspan="7"><strong><i class="fas fa-calendar"></i> ${title}</strong></td>`;
-          tbody.appendChild(headerRow);
-        }
-        
-        // Add events
-        groupEvents.forEach(event => {
-          const row = document.createElement('tr');
-          const eventDate = event.dateObj.toLocaleDateString();
-          const isToday = event.isToday;
-          const isPast = event.isPast;
-          
-          row.className = isToday ? 'today-event' : (isPast ? 'past-event' : '');
-          
-          row.innerHTML = `
-            <td>
-              ${event.title}
-              ${isToday ? '<span class="badge today-badge">Today</span>' : ''}
-              ${isPast ? '<span class="badge past-badge">Past</span>' : ''}
-            </td>
-            <td>${event.event_type}</td>
-            <td>
-              <span class="location-tag ${event.location === 'Unassigned Room' ? 'unassigned' : 'assigned'}">
-                <i class="fas fa-map-marker-alt"></i> ${event.location}
-              </span>
-            </td>
-            <td>${eventDate}</td>
-            <td class="time-display">${event.start_time}</td>
-            <td class="time-display">${event.end_time}</td>
-            <td class="action-buttons">
-              <button class="view-btn always-allowed" onclick="viewBulletin(${event.id}, '${event.title.replace(/'/g, "\\'")}', '${eventDate}', '${event.start_time}', '${event.end_time}', '${event.location.replace(/'/g, "\\'")}')">
-                <i class="fas fa-eye"></i> View
-              </button>
-              <button class="edit-btn" data-role-required="planner" onclick="editEvent(${event.id})">
-                <i class="fas fa-edit"></i> Edit
-              </button>
-              <button class="delete-btn" data-role-required="admin" onclick="deleteEvent(${event.id}, '${event.title.replace(/'/g, "\\\'")}')">
-                <i class="fas fa-trash"></i> Delete
-              </button>
-            </td>
-          `;
-          tbody.appendChild(row);
-        });
-      };
-      
-      // Render groups based on current filter
-      switch(currentFilters.time) {
-        case 'past':
-          renderGroup(groupedEvents.past, 'Past Events');
-          break;
-        case 'today':
-          renderGroup(groupedEvents.today, 'Today');
-          break;
-        case 'week':
-          renderGroup(groupedEvents.today, 'Today');
-          renderGroup(groupedEvents.thisWeek, 'This Week');
-          break;
-        case 'nextweek':
-          renderGroup(groupedEvents.nextWeek, 'Next Week');
-          break;
-        case 'month':
-          renderGroup(groupedEvents.today, 'Today');
-          renderGroup(groupedEvents.thisWeek, 'This Week');
-          renderGroup(groupedEvents.thisMonth, 'This Month');
-          break;
-        case 'nextmonth':
-          renderGroup(groupedEvents.nextMonth, 'Next Month');
-          break;
-        default: // 'upcoming'
-          renderGroup(groupedEvents.today, 'Today');
-          renderGroup(groupedEvents.thisWeek, 'This Week');
-          renderGroup(groupedEvents.nextWeek, 'Next Week');
-          renderGroup(groupedEvents.thisMonth, 'This Month');
-          renderGroup(groupedEvents.nextMonth, 'Next Month');
-          renderGroup(groupedEvents.future, 'Future Events');
-      }
 
       // Re-apply permissions to newly rendered elements
       setTimeout(() => UIPermissions.reapplyPermissions(), 100);
