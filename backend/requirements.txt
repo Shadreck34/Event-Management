@@ -2,18 +2,6 @@ Flask>=2.3.0
 Flask-MySQLdb>=1.0.0
 Flask-CORS>=4.0.0
 PyMySQL>=1.0.0
-# mysqlclient is optional and platform-specific; prefer PyMySQL for Render compatibility
-# mysqlclient>=2.0.0
-bcrypt>=4.0.0
-PyJWT>=2.0.0
-python-dotenv>=1.0.0
-gunicorn>=20.1.0
-gevent>=22.10.2
-waitress>=2.1.0
-Flask>=2.3.0
-Flask-MySQLdb>=1.0.0
-Flask-CORS>=4.0.0
-PyMySQL>=1.0.0
 mysqlclient>=2.0.0
 bcrypt>=4.0.0
 PyJWT>=2.0.0
@@ -29,4 +17,4 @@ mysqlclient>=2.0.0
 bcrypt>=4.0.0
 PyJWT>=2.0.0
 python-dotenv>=1.0.0
-waitress>=2.1.0rors comes on)
+
