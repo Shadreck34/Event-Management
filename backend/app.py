@@ -1,3 +1,26 @@
+import sys
+import importlib
+
+# Install PyMySQL as MySQLdb before any package that may import MySQLdb
+try:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+    # Map pymysql.constants -> MySQLdb.constants so code doing
+    # `from MySQLdb.constants import COMMAND` resolves correctly.
+    try:
+        pymysql_constants = importlib.import_module('pymysql.constants')
+        sys.modules.setdefault('MySQLdb.constants', pymysql_constants)
+        for sub in ('COMMAND', 'CLIENT', 'FIELD_TYPE', 'FLAG', 'CR', 'ER', 'SERVER_STATUS'):
+            try:
+                sys.modules.setdefault(f'MySQLdb.constants.{sub}', importlib.import_module(f'pymysql.constants.{sub}'))
+            except Exception:
+                pass
+    except Exception:
+        pass
+except Exception:
+    # If PyMySQL isn't available here, fall back and let imports fail later with a clear error.
+    pass
+
 from flask import Flask, json, request, jsonify, Response, render_template
 from flask_mysqldb import MySQL
 from flask_cors import CORS
@@ -40,8 +63,23 @@ if db_url:
         pass
 
 # CORS configuration
-CORS(app, 
-    origins=["http://127.0.0.1:5500", "http://localhost:5500", "http://localhost:3000"],
+CORS_ORIGINS = getattr(Config, 'CORS_ORIGINS', None)
+default_origins = ["http://127.0.0.1:5500", "http://localhost:5500", "http://localhost:3000"]
+if CORS_ORIGINS:
+    try:
+        # If Config.CORS_ORIGINS is a comma-separated string, split it.
+        if isinstance(CORS_ORIGINS, str):
+            extra = [o.strip() for o in CORS_ORIGINS.split(',') if o.strip()]
+        else:
+            extra = list(CORS_ORIGINS)
+        origins = list(dict.fromkeys(default_origins + extra))
+    except Exception:
+        origins = default_origins
+else:
+    origins = default_origins
+
+CORS(app,
+    origins=origins,
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "Accept"],
     supports_credentials=True)
